@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.raete-current {
+  --ink: hsl(204 23% 16%);
+  --muted-ink: hsl(204 10% 45%);
+  --paper: hsl(39 38% 95%);
+  --line: hsl(36 20% 84%);
+  --green: hsl(164 29% 31%);
+  min-height: 100vh;
+  padding: 0 clamp(22px, 7vw, 112px);
+  color: var(--ink);
+  background: radial-gradient(ellipse at 78% 20%, hsl(37 37% 91% / .62), transparent 35%), var(--paper);
+  font-family: Manrope, sans-serif;
+}
+
+.raete-current * { box-sizing: border-box; }
+.raete-current .rc-topbar { height: 78px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+.raete-current .rc-brand { font-size:23px; font-weight:800; letter-spacing:-.09em; }
+.raete-current .rc-note, .raete-current .rc-kicker, .raete-current .rc-meta { color:var(--muted-ink); font:9px 'DM Mono',monospace; letter-spacing:.11em; }
+.raete-current .rc-hero { max-width:920px; margin:76px auto 0; }
+.raete-current .rc-hero h1 { margin:24px 0 16px; font-size:clamp(68px,10vw,116px); line-height:.87; letter-spacing:-.09em; font-weight:600; }
+.raete-current .rc-hero h1 em { color:var(--green); font-weight:500; }
+.raete-current .rc-hero p { color:var(--muted-ink); font-size:14px; line-height:1.7; }
+.raete-current .rc-search { display:flex; align-items:center; gap:14px; height:64px; margin-top:32px; border-bottom:1px solid var(--ink); font-size:18px; }
+.raete-current .rc-search button { margin-left:auto; padding:13px 18px; border:0; color:white; background:var(--green); font:600 11px Manrope,sans-serif; }
+.raete-current .rc-results { max-width:1120px; margin:64px auto 80px; }
+.raete-current .rc-results h2 { margin:8px 0 24px; font-size:32px; letter-spacing:-.06em; }
+.raete-current .rc-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:22px; }
+.raete-current .rc-card { min-width:0; }
+.raete-current .rc-image { aspect-ratio:4/5; display:grid; place-items:center; overflow:hidden; background:linear-gradient(145deg,#d9cfc3,#f3eee7 50%,#a9a39a); }
+.raete-current .rc-image svg { width:100%; height:100%; }
+.raete-current .rc-skirt { fill:#20211f; }
+.raete-current .rc-skirt-twill { fill:#353431; }
+.raete-current .rc-skirt-wool { fill:#272926; }
+.raete-current .rc-waist { fill:none; stroke:#9c978d; stroke-width:2; opacity:.55; }
+.raete-current .rc-rib { fill:none; stroke:#b2aca1; stroke-width:1; opacity:.2; }
+.raete-current .rc-card h3 { margin:12px 0 5px; font-size:13px; line-height:1.4; }
+.raete-current .rc-price { display:flex; justify-content:space-between; color:var(--muted-ink); font-size:11px; }
+.raete-current .rc-foot { max-width:1120px; padding:18px 0; border-top:1px solid var(--line); color:var(--muted-ink); font:8px 'DM Mono',monospace; letter-spacing:.1em; }
+@media(max-width:800px) { .raete-current .rc-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }

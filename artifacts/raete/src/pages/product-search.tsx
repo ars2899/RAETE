@@ -1,92 +1,114 @@
-import { useState, type FormEvent } from 'react';
-import { Search, ArrowUpRight, RotateCw, Image as ImageIcon, ChevronDown, ChevronRight } from 'lucide-react';
-import { getSearchChannel3ProductsQueryKey, useSearchChannel3Products } from '@workspace/api-client-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  LoaderCircle,
+  Search,
+  Sparkles,
+  X,
+} from 'lucide-react';
+import {
+  getSearchChannel3ProductsQueryKey,
+  useSearchChannel3Products,
+} from '@workspace/api-client-react';
 import type { Channel3Offer, Channel3Product } from '@workspace/api-client-react';
 
-type PreferenceKey = 'materials' | 'quality' | 'value' | 'longevity';
-type PreferenceImportance = '' | 'high' | 'medium' | 'low';
-type SelectedImportance = Exclude<PreferenceImportance, ''>;
-type Preferences = Record<PreferenceKey, PreferenceImportance>;
-type SelectedPreferences = Record<PreferenceKey, SelectedImportance>;
-type PrototypeSignalKey = Exclude<PreferenceKey, 'value'>;
+type PriorityKey = 'materials' | 'quality' | 'price' | 'longevity';
+type PriorityLevel = '' | 'high' | 'medium' | 'low';
+type SelectedPriority = Exclude<PriorityLevel, ''>;
+type Priorities = Record<PriorityKey, PriorityLevel>;
+type SelectedPriorities = Record<PriorityKey, SelectedPriority>;
+type DimensionSource = 'prototype' | 'channel3';
 
-const preferenceOptions: { key: PreferenceKey; label: string }[] = [
+type Dimension = {
+  key: PriorityKey;
+  label: string;
+  score: number | null;
+  level: SelectedPriority;
+  weight: number;
+  source: DimensionSource;
+};
+type RankedProduct = {
+  product: Channel3Product;
+  dimensions: Dimension[];
+  score: number;
+  originalIndex: number;
+};
+
+const priorityOptions: { key: PriorityKey; label: string }[] = [
   { key: 'materials', label: 'Materials' },
   { key: 'quality', label: 'Quality' },
-  { key: 'value', label: 'Price' },
+  { key: 'price', label: 'Price' },
   { key: 'longevity', label: 'Longevity' },
 ];
-
-const priorityPresets: {
-  name: string;
-  values: SelectedPreferences;
-  description: string;
-}[] = [
-  {
-    name: 'Materials First',
-    values: { materials: 'high', quality: 'medium', value: 'low', longevity: 'medium' },
-    description: "What it's made of comes first.",
-  },
-  {
-    name: 'Keep It Forever',
-    values: { materials: 'medium', quality: 'high', value: 'low', longevity: 'high' },
-    description: 'Quality and longevity come first.',
-  },
-  {
-    name: 'Price Conscious',
-    values: { materials: 'low', quality: 'medium', value: 'high', longevity: 'low' },
-    description: 'Price comes first.',
-  },
-];
-
-const importanceWeights: Record<SelectedImportance, number> = {
+const weightByLevel: Record<SelectedPriority, number> = {
   high: 3,
   medium: 2,
   low: 1,
 };
 
-type RankedDimension = {
-  key: PreferenceKey;
-  label: string;
-  score: number | null;
-  importance: SelectedImportance;
-  weight: number;
-  source: 'channel3' | 'prototype';
-};
-
-type RankedProduct = {
-  product: Channel3Product;
-  score: number;
-  dimensions: RankedDimension[];
-  originalIndex: number;
-};
+export const presets: {
+  id: string;
+  name: string;
+  description: string;
+  priorities: SelectedPriorities;
+}[] = [
+  {
+    id: 'materials-first',
+    name: 'Materials First',
+    description: 'Materials high · Quality and Longevity medium · Price low',
+    priorities: { materials: 'high', quality: 'medium', price: 'low', longevity: 'medium' },
+  },
+  {
+    id: 'keep-forever',
+    name: 'Keep It Forever',
+    description: 'Quality and Longevity high · Materials medium · Price low',
+    priorities: { materials: 'medium', quality: 'high', price: 'low', longevity: 'high' },
+  },
+  {
+    id: 'price-conscious',
+    name: 'Price Conscious',
+    description: 'Price high · Quality medium · Materials and Longevity low',
+    priorities: { materials: 'low', quality: 'medium', price: 'high', longevity: 'low' },
+  },
+];
 
 function getImage(product: Channel3Product) {
   return product.images?.find((image) => image.is_main_image) ?? product.images?.[0];
 }
 
 function getOffer(product: Channel3Product): Channel3Offer | undefined {
-  return product.offers?.[0];
+  return product.offers?.find((offer) => {
+    const amount = offer.price?.price ?? offer.price?.amount;
+    return typeof amount === 'number' && Number.isFinite(amount) && amount >= 0 && !!offer.price?.currency;
+  }) ?? product.offers?.[0];
 }
 
-function formatPrice(offer: Channel3Offer) {
-  const price = offer.price?.price ?? offer.price?.amount;
-  if (price === undefined || !offer.price?.currency) return undefined;
+function getOfferAmount(offer?: Channel3Offer) {
+  const amount = offer?.price?.price ?? offer?.price?.amount;
+  return typeof amount === 'number' && Number.isFinite(amount) && amount >= 0 ? amount : undefined;
+}
+
+function formatPrice(offer?: Channel3Offer) {
+  const amount = getOfferAmount(offer);
+  const currency = offer?.price?.currency;
+  if (amount === undefined || !currency) return undefined;
   try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: offer.price.currency,
-    }).format(price);
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount);
   } catch {
-    return `${offer.price.currency} ${price}`;
+    return `${currency} ${amount}`;
   }
 }
 
-function hasAllPreferences(preferences: Preferences): preferences is SelectedPreferences {
-  return preferenceOptions.every(({ key }) => preferences[key] !== '');
+export function hasAllPriorities(priorities: Priorities): priorities is SelectedPriorities {
+  return priorityOptions.every(({ key }) => priorities[key] !== '');
 }
 
-function getPrototypeSignal(productId: string, dimension: PrototypeSignalKey): number {
+function getPrototypeScore(productId: string, dimension: Exclude<PriorityKey, 'price'>) {
   let hash = 2166136261;
   for (const character of `${productId}:${dimension}`) {
     hash ^= character.charCodeAt(0);
@@ -95,309 +117,352 @@ function getPrototypeSignal(productId: string, dimension: PrototypeSignalKey): n
   return (hash >>> 0) % 101;
 }
 
-function getComparableOfferPrice(product: Channel3Product) {
-  const offer = getOffer(product);
-  const amount = offer?.price?.price ?? offer?.price?.amount;
-  const currency = offer?.price?.currency;
-  if (typeof amount !== 'number' || !Number.isFinite(amount) || !currency) return null;
-  return { amount, currency };
-}
+export function getPriceScores(products: Channel3Product[]) {
+  const priceFacts = products.map((product) => {
+    const offer = getOffer(product);
+    const amount = getOfferAmount(offer);
+    const currency = offer?.price?.currency;
+    return amount !== undefined && currency ? { amount, currency } : null;
+  });
 
-function getValueScores(products: Channel3Product[]) {
-  const prices = products.map(getComparableOfferPrice);
-  if (prices.length === 0 || prices.some((price) => price === null)) {
-    return new Map<string, number>();
+  if (priceFacts.length === 0 || priceFacts.some((fact) => fact === null)) {
+    return { available: false, scores: new Map<string, number>() };
   }
 
-  const comparablePrices = prices.filter((price): price is NonNullable<typeof price> => price !== null);
-  if (new Set(comparablePrices.map((price) => price.currency)).size !== 1) {
-    return new Map<string, number>();
+  const comparablePrices = priceFacts.filter(
+    (fact): fact is NonNullable<typeof fact> => fact !== null,
+  );
+  if (new Set(comparablePrices.map((fact) => fact.currency)).size !== 1) {
+    return { available: false, scores: new Map<string, number>() };
   }
 
-  const amounts = comparablePrices.map((price) => price.amount);
-  const minPrice = Math.min(...amounts);
-  const maxPrice = Math.max(...amounts);
-
-  return new Map(
+  const amounts = comparablePrices.map((fact) => fact.amount);
+  const lowest = Math.min(...amounts);
+  const highest = Math.max(...amounts);
+  const scores = new Map(
     products.map((product, index) => [
       product.id,
-      maxPrice === minPrice
+      highest === lowest
         ? 100
-        : Math.round(((maxPrice - comparablePrices[index].amount) / (maxPrice - minPrice)) * 100),
+        : Math.round(((highest - comparablePrices[index].amount) / (highest - lowest)) * 100),
     ]),
   );
+  return { available: true, scores };
 }
 
-function rankProducts(products: Channel3Product[], preferences: SelectedPreferences): RankedProduct[] {
-  const valueScores = getValueScores(products);
-
+export function rankProducts(
+  products: Channel3Product[],
+  priorities: SelectedPriorities,
+): RankedProduct[] {
+  const prices = getPriceScores(products);
   return products
     .map((product, originalIndex) => {
-      const dimensions: RankedDimension[] = [
+      const dimensions: Dimension[] = [
         {
           key: 'materials',
           label: 'Materials',
-          score: getPrototypeSignal(product.id, 'materials'),
-          importance: preferences.materials,
-          weight: importanceWeights[preferences.materials],
+          score: getPrototypeScore(product.id, 'materials'),
+          level: priorities.materials,
+          weight: weightByLevel[priorities.materials],
           source: 'prototype',
         },
         {
           key: 'quality',
           label: 'Quality',
-          score: getPrototypeSignal(product.id, 'quality'),
-          importance: preferences.quality,
-          weight: importanceWeights[preferences.quality],
+          score: getPrototypeScore(product.id, 'quality'),
+          level: priorities.quality,
+          weight: weightByLevel[priorities.quality],
           source: 'prototype',
         },
         {
-          key: 'value',
+          key: 'price',
           label: 'Price',
-          score: valueScores.get(product.id) ?? null,
-          importance: preferences.value,
-          weight: importanceWeights[preferences.value],
+          score: prices.scores.get(product.id) ?? null,
+          level: priorities.price,
+          weight: weightByLevel[priorities.price],
           source: 'channel3',
         },
         {
           key: 'longevity',
           label: 'Longevity',
-          score: getPrototypeSignal(product.id, 'longevity'),
-          importance: preferences.longevity,
-          weight: importanceWeights[preferences.longevity],
+          score: getPrototypeScore(product.id, 'longevity'),
+          level: priorities.longevity,
+          weight: weightByLevel[priorities.longevity],
           source: 'prototype',
         },
       ];
-
-      const scoredDimensions = dimensions.filter(
-        (dimension): dimension is RankedDimension & { score: number } => dimension.score !== null,
+      const available = dimensions.filter(
+        (dimension): dimension is Dimension & { score: number } => dimension.score !== null,
       );
-      const totalWeight = scoredDimensions.reduce((total, dimension) => total + dimension.weight, 0);
-      const weightedTotal = scoredDimensions.reduce(
-        (total, dimension) => total + dimension.score * dimension.weight,
+      const totalWeight = available.reduce((sum, dimension) => sum + dimension.weight, 0);
+      const weightedScore = available.reduce(
+        (sum, dimension) => sum + dimension.score * dimension.weight,
         0,
       );
-
       return {
         product,
         dimensions,
         originalIndex,
-        score: weightedTotal / totalWeight,
+        score: Math.round(weightedScore / totalWeight),
       };
     })
     .sort((a, b) => b.score - a.score || a.originalIndex - b.originalIndex);
 }
 
-function formatImportance(importance: SelectedImportance) {
-  return importance.charAt(0).toUpperCase() + importance.slice(1);
+function getLeadingDimension(top: RankedProduct, second?: RankedProduct) {
+  if (!second) return undefined;
+  return top.dimensions
+    .map((dimension) => {
+      const other = second.dimensions.find((item) => item.key === dimension.key);
+      return {
+        ...dimension,
+        delta: other && dimension.score !== null && other.score !== null
+          ? dimension.score - other.score
+          : 0,
+        weightedDelta: other && dimension.score !== null && other.score !== null
+          ? (dimension.score - other.score) * dimension.weight
+          : 0,
+      };
+    })
+    .filter((dimension) => dimension.delta > 0)
+    .sort((a, b) => b.weightedDelta - a.weightedDelta || b.delta - a.delta)[0];
 }
 
-function whyThisRank(item: RankedProduct) {
-  const strongest = item.dimensions
-    .filter((dimension): dimension is RankedDimension & { score: number } => dimension.score !== null)
-    .sort((a, b) => b.score * b.weight - a.score * a.weight)[0];
-  if (!strongest) return 'Its overall score reflects the priorities you selected.';
-  if (strongest.source === 'channel3') {
-    return 'Its listed Channel3 price contributes most to this order.';
+export function getTradeoffText(top: RankedProduct, second: RankedProduct) {
+  const topLead = getLeadingDimension(top, second);
+  const secondLead = getLeadingDimension(second, top);
+  if (topLead && secondLead) {
+    return `${top.product.title} leads on ${topLead.label}${topLead.source === 'prototype' ? ' (Prototype)' : ''}; ${second.product.title} leads on ${secondLead.label}${secondLead.source === 'prototype' ? ' (Prototype)' : ''}.`;
   }
-  return `Its ${strongest.label.toLowerCase()} prototype signal carries the most weight in this order.`;
+  if (topLead) {
+    return `${top.product.title} has a small edge on ${topLead.label}${topLead.source === 'prototype' ? ' (Prototype)' : ''}, while the rest of the selected priorities are close.`;
+  }
+  if (secondLead) {
+    return `${second.product.title} has a small edge on ${secondLead.label}${secondLead.source === 'prototype' ? ' (Prototype)' : ''}; the overall fit remains close.`;
+  }
+  return 'The two options balance your selected priorities almost evenly.';
 }
 
-function aheadOfSecond(first: RankedProduct, second: RankedProduct) {
-  const firstAdvantages: string[] = [];
-  const secondAdvantages: string[] = [];
-
-  for (const dimension of first.dimensions) {
-    const other = second.dimensions.find((candidate) => candidate.key === dimension.key);
-    if (!other || dimension.score === null || other.score === null) continue;
-    const weightedDifference = (dimension.score - other.score) * dimension.weight;
-    if (weightedDifference === 0) continue;
-    const advantage = dimension.key === 'value'
-      ? 'lower listed price'
-      : `stronger ${dimension.label.toLowerCase()} prototype signal`;
-    (weightedDifference > 0 ? firstAdvantages : secondAdvantages).push(advantage);
-  }
-
-  if (firstAdvantages.length && secondAdvantages.length) {
-    return `It leads on the weighted mix: ${firstAdvantages.join(' and ')}; #2 is stronger on ${secondAdvantages.join(' and ')}.`;
-  }
-  if (firstAdvantages.length) {
-    return `It leads on the weighted mix, with ${firstAdvantages.join(' and ')}.`;
-  }
-  return 'Its selected priorities give it a higher weighted score.';
+function getWinnerReason(top: RankedProduct, second?: RankedProduct) {
+  const lead = second ? getLeadingDimension(top, second) : undefined;
+  if (!lead) return 'This is the strongest match across your selected priorities.';
+  return `It leads #2 on ${lead.label}${lead.source === 'prototype' ? ' (Prototype)' : ''}, which you set to ${lead.level}.`;
 }
 
-function ProductCard({
+function ProductImage({
   product,
-  index,
-  ranked,
-  rank,
-  featured = false,
-  closeCall = false,
-  compact = false,
-  expanded = false,
-  onToggleBreakdown,
-  tradeoffCopy,
+  className = '',
 }: {
   product: Channel3Product;
-  index: number;
-  ranked?: RankedProduct;
-  rank?: number;
-  featured?: boolean;
-  closeCall?: boolean;
-  compact?: boolean;
-  expanded?: boolean;
-  onToggleBreakdown?: () => void;
-  tradeoffCopy?: string;
+  className?: string;
 }) {
   const image = getImage(product);
-  const brand = product.brands?.find((item) => item.name)?.name;
-  const offer = getOffer(product);
-  const price = offer ? formatPrice(offer) : undefined;
   const imageUrl = image?.cleaned_url || image?.url;
-  const alt = image?.alt_text || product.title;
-  const valueDimension = ranked?.dimensions.find((dimension) => dimension.key === 'value');
-
   return (
-    <article className={`product-card${featured ? ' featured-product' : ''}${closeCall ? ' close-call-product' : ''}${compact ? ' compact-product' : ''}`} data-testid={`card-product-${product.id}`} style={{ animationDelay: `${index * 55}ms` }}>
-      <a className="product-image" href={offer?.url} target="_blank" rel="noreferrer" aria-label={`Open ${product.title} at merchant`} data-testid={`link-product-${product.id}`}>
-        {imageUrl ? <img src={imageUrl} alt={alt} loading="lazy" data-testid={`img-product-${product.id}`} /> : (
-          <div className="image-fallback" aria-label="No product image available"><ImageIcon size={22} strokeWidth={1.4} /></div>
-        )}
-        <span className="external-mark"><ArrowUpRight size={16} /></span>
-      </a>
-      <div className="product-copy">
-        {ranked && rank !== undefined && (
-          <span className={`ranking-rank product-rank${featured ? ' featured-rank' : ''}`}>{featured || closeCall ? `#${rank} for you` : `#${rank}`}</span>
-        )}
-        {brand && <p className="product-brand" data-testid={`text-brand-${product.id}`}>{brand}</p>}
-        <h2 data-testid={`text-title-${product.id}`}>{product.title}</h2>
-        <div className="product-meta">
-          {price && <span className="product-price" data-testid={`text-price-${product.id}`}>{price}</span>}
-          {offer?.domain && <a className="merchant" href={offer.url} target="_blank" rel="noreferrer" data-testid={`link-merchant-${product.id}`}>{offer.domain}<ArrowUpRight size={12} /></a>}
-        </div>
+    <div className={`decision-image ${className}`}>
+      {imageUrl ? <img src={imageUrl} alt={image?.alt_text || product.title} loading="lazy" /> : (
+        <span className="decision-image-empty" aria-label="No product image"><Sparkles size={20} /></span>
+      )}
+    </div>
+  );
+}
+
+function MerchantLink({ offer }: { offer?: Channel3Offer }) {
+  if (!offer?.url) return <span className="decision-merchant">Merchant unavailable</span>;
+  return (
+    <a className="decision-merchant" href={offer.url} target="_blank" rel="noreferrer">
+      {offer.domain || 'View listing'} <ArrowUpRight size={13} aria-hidden="true" />
+    </a>
+  );
+}
+
+function LiveProductFacts({ product }: { product: Channel3Product }) {
+  const offer = getOffer(product);
+  const brand = product.brands?.find((item) => item.name)?.name;
+  const price = formatPrice(offer);
+  return (
+    <div className="live-facts">
+      <span className="live-facts-label"><span /> Live listing</span>
+      {brand && <p className="live-brand">{brand}</p>}
+      <h3>{product.title}</h3>
+      <div className="live-fact-row">
+        {price && <strong className="live-price">{price}</strong>}
+        <MerchantLink offer={offer} />
       </div>
-      {ranked && rank !== undefined && (
-        <div className="ranking-panel" data-testid={`panel-ranking-${product.id}`}>
-          {featured && !closeCall && rank === 1 && (
-            <>
-              <div className="ranking-explanation">
-                <strong>Why it's #1 for you</strong>
-                <p>{whyThisRank(ranked)}</p>
-              </div>
-              {tradeoffCopy && (
-                <div className="ranking-explanation">
-                  <strong>Ahead of #2 because…</strong>
-                  <p>{tradeoffCopy}</p>
-                </div>
-              )}
-            </>
-          )}
-          {onToggleBreakdown && (
-            <button className="breakdown-toggle" type="button" onClick={onToggleBreakdown} aria-expanded={expanded}>
-              {expanded ? 'Hide why' : 'See why'} {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            </button>
-          )}
-          {expanded && <>
-            <div className="priority-breakdown">
-              <strong>Priority breakdown</strong>
-              {ranked.dimensions.map((dimension) => {
-                const signalDescription = dimension.key === 'value'
-                  ? valueDimension?.score === null || valueDimension?.score === undefined ? 'Price not comparable' : 'Channel3 offer price'
-                  : (dimension.score ?? 0) >= 67 ? 'Stronger demo signal' : (dimension.score ?? 0) >= 34 ? 'Mid-range demo signal' : 'Lighter demo signal';
-                return (
-                  <div className="priority-breakdown-row" key={dimension.key}>
-                    <span>{dimension.label}{dimension.source === 'prototype' && <small className="prototype-label">Prototype</small>}</span>
-                    <span>{formatImportance(dimension.importance)} priority · {signalDescription}</span>
-                  </div>
-                );
-              })}
-              <p>Price uses comparable Channel3 offer prices. Materials, Quality, and Longevity are deterministic prototype signals, not Channel3 facts.</p>
-            </div>
-          </>}
+      {(offer?.condition || offer?.availability) && (
+        <div className="listing-details">
+          {offer.condition && <span>{offer.condition}</span>}
+          {offer.availability && <span>{offer.availability}</span>}
         </div>
       )}
+    </div>
+  );
+}
+
+function ScoreBreakdown({ ranked }: { ranked: RankedProduct }) {
+  return (
+    <div className="why-breakdown" data-testid="panel-score-breakdown">
+      <div className="breakdown-heading">
+        <span>Dimension breakdown</span>
+        <span>0–100 dimension scores</span>
+      </div>
+      {ranked.dimensions.map((dimension) => (
+        <div className="dimension-row" key={dimension.key}>
+          <div className="dimension-copy">
+            <span>{dimension.label}</span>
+            {dimension.source === 'prototype' && <span className="prototype-tag">Prototype</span>}
+            {dimension.source === 'channel3' && <span className="provenance-tag">Channel3 offer</span>}
+          </div>
+          <div className="dimension-track" aria-label={dimension.score === null ? 'Not included in ranking' : `${dimension.score} out of 100`}>
+            {dimension.score !== null && <span style={{ width: `${dimension.score}%` }} />}
+          </div>
+          <strong className="dimension-value">{dimension.score === null ? '—' : dimension.score}</strong>
+          <span className="dimension-weight">{dimension.level} · ×{dimension.weight}</span>
+        </div>
+      ))}
+      <p className="breakdown-note">
+        The overall score is used only to order results and is never shown. Prototype dimensions are synthetic demo signals, not owner evidence.
+      </p>
+    </div>
+  );
+}
+
+function Alternative({
+  ranked,
+  rank,
+}: {
+  ranked: RankedProduct;
+  rank: number;
+}) {
+  const offer = getOffer(ranked.product);
+  const price = formatPrice(offer);
+  return (
+    <article className="alternative-row" data-testid={`card-ranked-product-${ranked.product.id}`}>
+      <span className="alternative-rank">0{rank}</span>
+      <ProductImage product={ranked.product} className="alternative-image" />
+      <div className="alternative-copy">
+        <span className="alternative-brand">{ranked.product.brands?.find((item) => item.name)?.name || offer?.domain || 'Retail listing'}</span>
+        <h3>{ranked.product.title}</h3>
+        <MerchantLink offer={offer} />
+      </div>
+      <div className="alternative-aside">
+        {price && <strong>{price}</strong>}
+        <span>Live listing</span>
+      </div>
     </article>
   );
 }
 
-function PreferenceControls({
-  preferences,
+function ProductCard({ product, index }: { product: Channel3Product; index: number }) {
+  const offer = getOffer(product);
+  const price = formatPrice(offer);
+  return (
+    <article className="unranked-card" data-testid={`card-unranked-product-${product.id}`} style={{ animationDelay: `${index * 45}ms` }}>
+      <ProductImage product={product} />
+      <div className="unranked-copy">
+        <span>{product.brands?.find((item) => item.name)?.name || offer?.domain || 'Retail listing'}</span>
+        <h3>{product.title}</h3>
+        <div>{price && <strong>{price}</strong>}<MerchantLink offer={offer} /></div>
+      </div>
+    </article>
+  );
+}
+
+function PriorityPanel({
+  priorities,
+  activePreset,
+  rankingActive,
+  priceAvailable,
   onChange,
-  selectedPreset,
   onChoosePreset,
 }: {
-  preferences: Preferences;
-  onChange: (key: PreferenceKey, value: PreferenceImportance) => void;
-  selectedPreset: string;
-  onChoosePreset: (presetName: string) => void;
+  priorities: Priorities;
+  activePreset: string | null;
+  rankingActive: boolean;
+  priceAvailable: boolean;
+  onChange: (key: PriorityKey, value: PriorityLevel) => void;
+  onChoosePreset: (preset: typeof presets[number]) => void;
 }) {
   return (
-    <section className="preference-panel" aria-label="Priority controls and presets" data-testid="panel-preferences">
-      <div className="preference-heading">
-        <h3>What matters for this choice?</h3>
-      </div>
-      <div className="priority-presets">
-        <span className="preset-heading">Preset priorities</span>
-        <div className="preset-list">
-          {priorityPresets.map((preset) => (
-            <button
-              key={preset.name}
-              className={`priority-preset${selectedPreset === preset.name ? ' selected' : ''}`}
-              type="button"
-              aria-pressed={selectedPreset === preset.name}
-              onClick={() => onChoosePreset(preset.name)}
-            >
-              <strong>{preset.name}</strong>
-              <span>{preset.description}</span>
-            </button>
-          ))}
+    <section className="priority-panel" aria-label="Ranking priorities" data-testid="panel-priorities">
+      <div className="priority-topline">
+        <div>
+          <span className="eyebrow">YOUR DECISION, YOUR WAY</span>
+          <h2>What matters most?</h2>
         </div>
+        <span className={`ranking-state ${rankingActive ? 'is-ready' : ''}`} data-testid="status-ranking">
+          <span />{rankingActive ? 'Ranking personalized' : 'Not ranked yet'}
+        </span>
       </div>
-      <div className="preference-controls">
-        {preferenceOptions.map(({ key, label }) => (
-          <label className="preference-field" htmlFor={`preference-${key}`} key={key}>
-            <span>{label}{key !== 'value' && <small className="prototype-label">Prototype</small>}</span>
+      <div className="preset-list" aria-label="Priority presets">
+        {presets.map((preset) => (
+          <button
+            className={`preset-button ${activePreset === preset.id ? 'is-selected' : ''}`}
+            key={preset.id}
+            type="button"
+            onClick={() => onChoosePreset(preset)}
+            aria-pressed={activePreset === preset.id}
+            data-testid={`button-preset-${preset.id}`}
+          >
+            <span className="preset-name">{preset.name}{activePreset === preset.id && <Check size={13} aria-hidden="true" />}</span>
+            <span className="preset-description">{preset.description}</span>
+          </button>
+        ))}
+      </div>
+      <div className="priority-fields">
+        {priorityOptions.map(({ key, label }, index) => (
+          <label className="priority-field" htmlFor={`priority-${key}`} key={key}>
+            <span className="priority-number">0{index + 1}</span>
+            <span className="priority-label">
+              <span>{label}</span>
+              {key === 'price'
+                ? <span className="priority-source-label">Channel3</span>
+                : <span className="priority-source-label is-prototype">Prototype</span>}
+              {key === 'price' && !priceAvailable && <small>Not comparable</small>}
+            </span>
             <select
-              id={`preference-${key}`}
-              value={preferences[key]}
-              onChange={(event) => onChange(key, event.currentTarget.value as PreferenceImportance)}
-              data-testid={`select-preference-${key}`}
+              id={`priority-${key}`}
+              value={priorities[key]}
+              onChange={(event) => onChange(key, event.currentTarget.value as PriorityLevel)}
+              data-testid={`select-priority-${key}`}
             >
               <option value="" disabled>Choose</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
               <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
             </select>
           </label>
         ))}
       </div>
-      <p className="priority-instruction">Set all four, or start from a preset.</p>
+      <div className="method-note">
+        <Info size={15} aria-hidden="true" />
+        <p>
+          High / Medium / Low use weights 3 / 2 / 1. {priceAvailable
+            ? 'Price uses the first Channel3 offer with a valid amount and currency for each result. Within one shared currency, score = round((highest price − this price) ÷ (highest price − lowest price) × 100); equal prices all score 100.'
+            : 'Price is omitted from ranking when any result lacks a priced offer or the selected offers use different currencies.'}
+          {' '}Ties keep Channel3’s original order.
+        </p>
+      </div>
     </section>
   );
 }
 
-function ProductSkeleton({ index }: { index: number }) {
-  return <div className="skeleton-card" style={{ animationDelay: `${index * 70}ms` }} aria-hidden="true">
-    <div className="skeleton-image" />
-    <div className="skeleton-line short" />
-    <div className="skeleton-line long" />
-    <div className="skeleton-line medium" />
-  </div>;
+function SkeletonCard() {
+  return <div className="decision-skeleton" aria-hidden="true"><div /><i /><i /><i /></div>;
 }
-
 export default function ProductSearch() {
   const [input, setInput] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
-  const [selectedPreset, setSelectedPreset] = useState('');
-  const [expandedBreakdowns, setExpandedBreakdowns] = useState<string[]>([]);
-  const [showAllProducts, setShowAllProducts] = useState(false);
-  const [prototypeDisclosureOpen, setPrototypeDisclosureOpen] = useState(false);
-  const [preferences, setPreferences] = useState<Preferences>({
+  const [priorities, setPriorities] = useState<Priorities>({
     materials: '',
     quality: '',
-    value: '',
+    price: '',
     longevity: '',
   });
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [expandedWhy, setExpandedWhy] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const [prototypeOpen, setPrototypeOpen] = useState(false);
   const query = useSearchChannel3Products(
     { query: submittedQuery || ' ' },
     {
@@ -409,208 +474,232 @@ export default function ProductSearch() {
     },
   );
 
-  function startSearch(nextQuery: string) {
-    const next = nextQuery.trim().slice(0, 200);
-    if (!next) return;
-    setInput(next);
-    setSubmittedQuery(next);
-    setPreferences({ materials: '', quality: '', value: '', longevity: '' });
-    setSelectedPreset('');
-    setExpandedBreakdowns([]);
-    setShowAllProducts(false);
-  }
+  const products = query.data?.products?.slice(0, 8) ?? [];
+  const rankingActive = hasAllPriorities(priorities);
+  const prices = useMemo(() => getPriceScores(products), [products]);
+  const rankedProducts = useMemo(
+    () => rankingActive ? rankProducts(products, priorities as SelectedPriorities) : [],
+    [products, priorities, rankingActive],
+  );
+  const top = rankedProducts[0];
+  const second = rankedProducts[1];
+  const closeCall = !!top && !!second && top.score - second.score < 5;
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    startSearch(input);
+    const next = input.trim().slice(0, 200);
+    if (next) {
+      setSubmittedQuery(next);
+      setShowMore(false);
+      setExpandedWhy(false);
+    }
   }
 
-  function choosePreset(presetName: string) {
-    const preset = priorityPresets.find(({ name }) => name === presetName);
-    if (!preset) return;
-    setPreferences(preset.values);
-    setSelectedPreset(preset.name);
-    setShowAllProducts(false);
+  function onPriorityChange(key: PriorityKey, value: PriorityLevel) {
+    setPriorities((current) => ({ ...current, [key]: value }));
+    setActivePreset(null);
   }
 
-  function changePriority(key: PreferenceKey, value: PreferenceImportance) {
-    setPreferences((current) => ({ ...current, [key]: value }));
-    setSelectedPreset('');
-    setShowAllProducts(false);
+  function onChoosePreset(preset: typeof presets[number]) {
+    setPriorities(preset.priorities);
+    setActivePreset(preset.id);
+    setShowMore(false);
+    setExpandedWhy(false);
   }
-
-  function toggleBreakdown(productId: string) {
-    setExpandedBreakdowns((current) => current.includes(productId)
-      ? current.filter((id) => id !== productId)
-      : [...current, productId]);
-  }
-
-  const products = query.data?.products?.slice(0, 8) ?? [];
-  const rankingActive = hasAllPreferences(preferences);
-  const rankedProducts = rankingActive ? rankProducts(products, preferences) : [];
-  const closeCall = rankedProducts.length > 1 && rankedProducts[0].score - rankedProducts[1].score < 5;
-  const visibleProducts = showAllProducts ? rankedProducts : rankedProducts.slice(0, 3);
+  const shownAlternatives = showMore ? rankedProducts.slice(1) : rankedProducts.slice(1, 3);
 
   return (
-    <main className="page-shell">
-      <header className="topbar">
-        <a className="wordmark" href="/" aria-label="Raete home" data-testid="link-home">
-          <span className="brand-symbol"><span /></span>
+    <main className="decision-page">
+      <header className="decision-header">
+        <a className="decision-wordmark" href="/" aria-label="Raete home" data-testid="link-home">
+          <span className="wordmark-mark" aria-hidden="true"><i /></span>
           <span>raete</span>
         </a>
-        <div className="topbar-tools">
-          <button
-            className="prototype-disclosure-toggle"
-            type="button"
-            aria-expanded={prototypeDisclosureOpen}
-            onClick={() => setPrototypeDisclosureOpen((open) => !open)}
-          >
-            <span className="prototype-disclosure-dot" /> Prototype data <ChevronDown size={13} />
-          </button>
-          {prototypeDisclosureOpen && (
-            <div className="prototype-disclosure">
-              <strong>Prototype data</strong>
-              <p>Channel3 supplies product facts, retailer details, and listed prices.</p>
-              <p>Materials, Quality, and Longevity use deterministic demo signals, not owner reports.</p>
-            </div>
-          )}
-        </div>
+        <div className="header-context"><span className="header-live-dot" /> PRODUCT SEARCH <b>/</b> CHANNEL3</div>
       </header>
 
-      <section className={`search-intro${submittedQuery ? ' search-intro-compact' : ''}`}>
-        <div className="search-copy">
-          {!submittedQuery && (
-            <>
-              <h1>Which one wins for you?</h1>
-              <p className="intro-copy">Set what matters. See which one comes out ahead, and why.</p>
-            </>
-          )}
+      <section className="decision-hero">
+        <div className="hero-overline"><span>01</span> A BETTER WAY TO CHOOSE</div>
+        <div className="hero-heading">
+          <h1>Find the one<br /><em>worth keeping.</em></h1>
+          <p>Search real products across retailers.<br />Choose what matters. See why it fits.</p>
         </div>
-        <form className="search-form" onSubmit={onSubmit}>
-          <Search className="search-icon" size={20} strokeWidth={1.7} aria-hidden="true" />
+        <form className="decision-search" onSubmit={onSubmit}>
+          <Search size={19} strokeWidth={1.7} aria-hidden="true" />
           <input
             type="search"
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => setInput(event.currentTarget.value)}
             placeholder="Try “black mini skirt”"
             aria-label="Search products"
             maxLength={200}
             data-testid="input-search"
           />
           <button type="submit" disabled={!input.trim() || query.isFetching} data-testid="button-submit">
-            {query.isFetching ? <span className="button-loading" /> : <>Search <span className="button-arrow">↗</span></>}
+            {query.isFetching ? <LoaderCircle size={16} className="search-spinner" /> : <>Search <ArrowUpRight size={15} /></>}
           </button>
         </form>
-        {!submittedQuery && (
-          <button className="example-search" type="button" onClick={() => startSearch('black mini skirt')}>
-            Try “black mini skirt” <ArrowUpRight size={14} />
-          </button>
-        )}
+        <div className="search-meta"><span>LIVE RETAIL SEARCH</span><span>UP TO 8 RESULTS</span></div>
       </section>
 
-      {submittedQuery ? (
-        <section className="results-section" aria-live="polite">
-          <div className="results-heading">
-            <div><h2>{submittedQuery}</h2></div>
+      {!submittedQuery ? (
+        <section className="first-search-note" data-testid="status-idle">
+          <span>THE OPEN WEB, IN VIEW</span>
+          <p>Good things are already out there.<br />Start with what you’re looking for.</p>
+          <div className="first-search-rule" />
+        </section>
+      ) : (
+        <section className="decision-results" aria-live="polite">
+          <div className="search-results-heading">
+            <div><span className="eyebrow">YOUR SEARCH</span><h2>{submittedQuery}</h2></div>
+            {query.isSuccess && <span className="result-count" data-testid="text-result-count">{products.length} {products.length === 1 ? 'RESULT' : 'RESULTS'}</span>}
           </div>
+
           {query.isSuccess && !query.isFetching && products.length > 0 && (
-            <PreferenceControls
-              preferences={preferences}
-              onChange={changePriority}
-              selectedPreset={selectedPreset}
-              onChoosePreset={choosePreset}
-            />
+            <>
+              <PriorityPanel
+                priorities={priorities}
+                activePreset={activePreset}
+                rankingActive={rankingActive}
+                priceAvailable={prices.available}
+                onChange={onPriorityChange}
+                onChoosePreset={onChoosePreset}
+              />
+              {!rankingActive && (
+                <div className="unranked-notice" data-testid="status-unranked">
+                  <span>Browse first</span>
+                  <p>These results stay in Channel3’s original order until you set all four priorities or choose a preset.</p>
+                </div>
+              )}
+            </>
           )}
+
           {query.isFetching && (
-            <div className="product-grid" data-testid="status-loading">
-              {Array.from({ length: 4 }, (_, index) => <ProductSkeleton key={index} index={index} />)}
+            <div className="unranked-grid" data-testid="status-loading" aria-label="Loading products">
+              {Array.from({ length: 4 }, (_, index) => <SkeletonCard key={index} />)}
             </div>
           )}
+
           {query.isError && !query.isFetching && (
-            <div className="state-panel error-panel" data-testid="status-error">
-              <div className="state-mark">!</div>
+            <div className="result-state error-state" data-testid="status-error">
+              <span className="state-icon">!</span>
               <div><h3>That search didn’t come through.</h3><p>Give it another try in a moment.</p></div>
-              <button className="retry-button" type="button" onClick={() => void query.refetch()} data-testid="button-retry"><RotateCw size={15} /> Try again</button>
+              <button type="button" className="retry-search" onClick={() => void query.refetch()} data-testid="button-retry">Try again <ArrowUpRight size={14} /></button>
             </div>
           )}
+
           {query.isSuccess && !query.isFetching && products.length === 0 && (
-            <div className="state-panel empty-panel" data-testid="status-empty">
-              <div className="state-mark empty-mark">—</div>
-              <div><h3>No products found.</h3><p>Try a different description.</p></div>
+            <div className="result-state" data-testid="status-empty">
+              <span className="state-icon quiet">—</span>
+              <div><h3>No pieces found.</h3><p>Try a different description.</p></div>
             </div>
           )}
-          {query.isSuccess && !query.isFetching && products.length > 0 && (
-            rankingActive ? (
-              <section className="ranked-results" aria-label="Ranked products" data-testid="list-products">
-                {closeCall
-                  ? <div className="close-call-notice"><h3>No clear winner for your priorities</h3><p>The top two products are nearly even across your priorities.</p></div>
-                  : <div className="ranked-results-heading">Ranked by your priorities</div>}
-                {!closeCall && rankedProducts.length > 0 && (
-                  <ProductCard
-                    key={rankedProducts[0].product.id}
-                    product={rankedProducts[0].product}
-                    index={0}
-                    ranked={rankedProducts[0]}
-                    rank={1}
-                    featured
-                    expanded={expandedBreakdowns.includes(rankedProducts[0].product.id)}
-                    onToggleBreakdown={() => toggleBreakdown(rankedProducts[0].product.id)}
-                    tradeoffCopy={rankedProducts[1] ? aheadOfSecond(rankedProducts[0], rankedProducts[1]) : undefined}
-                  />
-                )}
-                {closeCall && (
-                  <div className="close-call-pair">
-                    {rankedProducts.slice(0, 2).map((row, index) => (
-                      <ProductCard
-                        key={row.product.id}
-                        product={row.product}
-                        index={index}
-                        ranked={row}
-                        rank={index + 1}
-                        closeCall
-                        compact
-                        expanded={expandedBreakdowns.includes(row.product.id)}
-                        onToggleBreakdown={() => toggleBreakdown(row.product.id)}
-                      />
-                    ))}
+          {query.isSuccess && !query.isFetching && products.length > 0 && !rankingActive && (
+            <div className="unranked-grid" data-testid="list-unranked-products">
+              {products.map((product, index) => <ProductCard product={product} index={index} key={product.id} />)}
+            </div>
+          )}
+
+          {query.isSuccess && !query.isFetching && rankingActive && top && (
+            <div className="ranked-results" data-testid="list-ranked-products">
+              <div className={`winner-card ${closeCall ? 'winner-close' : ''}`} data-testid={`card-winner-${top.product.id}`}>
+                <div className="winner-photo">
+                  <ProductImage product={top.product} />
+                  <span className="winner-badge">{closeCall ? 'CLOSE CALL' : 'YOUR BEST FIT'}</span>
+                  <span className="winner-index">01 / {String(products.length).padStart(2, '0')}</span>
+                </div>
+                <div className="winner-details">
+                  <div className="winner-intro">
+                    <span className="eyebrow">{closeCall ? 'A CLOSE MATCH FOR YOU' : 'WHY IT’S #1 FOR YOU'}</span>
+                    <span className="match-mark"><Sparkles size={14} /> {closeCall ? 'NEARLY EVEN' : 'PRIORITY MATCH'}</span>
                   </div>
-                )}
-                <div className={`product-grid ranked-products${closeCall ? ' ranked-after-close-call' : ''}`}>
-                  {(closeCall ? visibleProducts.slice(2) : visibleProducts.slice(1)).map((row, index) => {
-                    const rank = rankedProducts.findIndex(({ product }) => product.id === row.product.id) + 1;
-                    return (
-                      <ProductCard
-                        key={row.product.id}
-                        product={row.product}
-                        index={index}
-                        ranked={row}
-                        rank={rank}
-                        compact
-                        expanded={expandedBreakdowns.includes(row.product.id)}
-                        onToggleBreakdown={() => toggleBreakdown(row.product.id)}
-                      />
-                    );
-                  })}
-                </div>
-                {rankedProducts.length > 3 && !showAllProducts && (
-                  <button className="show-more-products" type="button" onClick={() => setShowAllProducts(true)}>
-                    Show more <span>{rankedProducts.length - 3} more products</span> <ChevronDown size={14} />
+                  <LiveProductFacts product={top.product} />
+                  {closeCall && second ? (
+                    <div className="close-call" role="status" data-testid="status-close-call">
+                      <strong>No clear winner for your priorities</strong>
+                      <p>{getTradeoffText(top, second)}</p>
+                    </div>
+                  ) : (
+                    <div className="winner-reason" data-testid="text-winner-reason">
+                      <span>WHY IT’S #1</span>
+                      <p>{getWinnerReason(top, second)}</p>
+                    </div>
+                  )}
+                  {second && (
+                    <div className="ahead-note" data-testid="text-ahead-comparison">
+                      <ArrowDownRight size={16} aria-hidden="true" />
+                      <div><span>AHEAD OF #2 BECAUSE…</span><p>{closeCall ? getTradeoffText(top, second) : getWinnerReason(top, second)}</p></div>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="see-why-button"
+                    onClick={() => setExpandedWhy((current) => !current)}
+                    aria-expanded={expandedWhy}
+                    data-testid="button-see-why"
+                  >
+                    {expandedWhy ? 'Hide breakdown' : 'See why'}
+                    {expandedWhy ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                   </button>
-                )}
-              </section>
-            ) : (
-              <section className="unranked-products" aria-label="Unranked products">
-                <p className="unranked-products-line">
-                  {products.length} {products.length === 1 ? 'product' : 'products'} from Channel3 · not ranked yet
-                </p>
-                <div className="product-grid" data-testid="list-products">
-                  {products.map((product, index) => <ProductCard key={product.id} product={product} index={index} />)}
+                  {expandedWhy && <ScoreBreakdown ranked={top} />}
                 </div>
-              </section>
-            )
+              </div>
+
+              {shownAlternatives.length > 0 && (
+                <section className="alternatives-section" aria-label="Other close fits">
+                  <div className="alternatives-heading">
+                    <div><span className="eyebrow">OTHER OPTIONS</span><h2>Worth a closer look</h2></div>
+                    <span>IN CHANNEL3 ORDER WHEN TIED</span>
+                  </div>
+                  <div className="alternatives-list">
+                    {shownAlternatives.map((item, index) => <Alternative key={item.product.id} ranked={item} rank={index + 2} />)}
+                  </div>
+                  {rankedProducts.length > 3 && (
+                    <button
+                      type="button"
+                      className="show-more-button"
+                      onClick={() => setShowMore((current) => !current)}
+                      aria-expanded={showMore}
+                      data-testid="button-show-more"
+                    >
+                      {showMore ? <>Show fewer <ChevronUp size={15} /></> : <>Show more ({rankedProducts.length - 3}) <ChevronDown size={15} /></>}
+                    </button>
+                  )}
+                </section>
+              )}
+            </div>
           )}
         </section>
-      ) : null}
+      )}
+
+      <footer className="decision-footer">
+        <span>RAETE <b>/</b> A WINDOW INTO WHAT’S AVAILABLE</span>
+        <span>REAL LISTINGS. CLEARER CHOICES.</span>
+      </footer>
+
+      <div className="prototype-disclosure">
+        {prototypeOpen && (
+          <section className="prototype-popover" id="prototype-explainer" role="dialog" aria-label="Prototype data details">
+            <div className="prototype-popover-heading">
+              <div><span className="eyebrow">A NOTE ON EVIDENCE</span><h2>Prototype data</h2></div>
+              <button type="button" aria-label="Close prototype data details" onClick={() => setPrototypeOpen(false)} data-testid="button-close-prototype"><X size={16} /></button>
+            </div>
+            <div className="evidence-row live-evidence"><span className="evidence-dot" /><p><strong>Live from Channel3</strong>Product titles, images, brand names, retailer links, offer prices, and listing details.</p></div>
+            <div className="evidence-row prototype-evidence"><span className="prototype-tag">Prototype</span><p><strong>Demo signals</strong>Materials, Quality, and Longevity are synthetic placeholders, not owner evidence.</p></div>
+            <div className="evidence-row"><span className="community-mark">—</span><p><strong>Not available</strong>Community reputation and real owner reports are not live.</p></div>
+          </section>
+        )}
+        <button
+          className={`prototype-toggle ${prototypeOpen ? 'is-open' : ''}`}
+          type="button"
+          onClick={() => setPrototypeOpen((current) => !current)}
+          aria-expanded={prototypeOpen}
+          aria-controls="prototype-explainer"
+          data-testid="button-prototype-data"
+        >
+          <Info size={16} /> Prototype data {prototypeOpen ? <X size={14} /> : <ChevronUp size={14} />}
+        </button>
+      </div>
     </main>
   );
 }
