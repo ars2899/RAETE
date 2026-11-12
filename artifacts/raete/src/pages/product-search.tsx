@@ -20,18 +20,22 @@ const preferenceOptions: { key: PreferenceKey; label: string }[] = [
 const priorityPresets: {
   name: string;
   values: SelectedPreferences;
+  description: string;
 }[] = [
   {
     name: 'Materials First',
     values: { materials: 'high', quality: 'medium', value: 'low', longevity: 'medium' },
+    description: "What it's made of comes first.",
   },
   {
     name: 'Keep It Forever',
     values: { materials: 'medium', quality: 'high', value: 'low', longevity: 'high' },
+    description: 'Quality and longevity come first.',
   },
   {
     name: 'Price Conscious',
     values: { materials: 'low', quality: 'medium', value: 'high', longevity: 'low' },
+    description: 'Price comes first.',
   },
 ];
 
@@ -229,6 +233,7 @@ function ProductCard({
   rank,
   featured = false,
   closeCall = false,
+  compact = false,
   expanded = false,
   onToggleBreakdown,
   tradeoffCopy,
@@ -239,6 +244,7 @@ function ProductCard({
   rank?: number;
   featured?: boolean;
   closeCall?: boolean;
+  compact?: boolean;
   expanded?: boolean;
   onToggleBreakdown?: () => void;
   tradeoffCopy?: string;
@@ -252,7 +258,7 @@ function ProductCard({
   const valueDimension = ranked?.dimensions.find((dimension) => dimension.key === 'value');
 
   return (
-    <article className={`product-card${featured ? ' featured-product' : ''}${closeCall ? ' close-call-product' : ''}`} data-testid={`card-product-${product.id}`} style={{ animationDelay: `${index * 55}ms` }}>
+    <article className={`product-card${featured ? ' featured-product' : ''}${closeCall ? ' close-call-product' : ''}${compact ? ' compact-product' : ''}`} data-testid={`card-product-${product.id}`} style={{ animationDelay: `${index * 55}ms` }}>
       <a className="product-image" href={offer?.url} target="_blank" rel="noreferrer" aria-label={`Open ${product.title} at merchant`} data-testid={`link-product-${product.id}`}>
         {imageUrl ? <img src={imageUrl} alt={alt} loading="lazy" data-testid={`img-product-${product.id}`} /> : (
           <div className="image-fallback" aria-label="No product image available"><ImageIcon size={22} strokeWidth={1.4} /></div>
@@ -260,6 +266,9 @@ function ProductCard({
         <span className="external-mark"><ArrowUpRight size={16} /></span>
       </a>
       <div className="product-copy">
+        {ranked && rank !== undefined && (
+          <span className={`ranking-rank product-rank${featured ? ' featured-rank' : ''}`}>{featured || closeCall ? `#${rank} for you` : `#${rank}`}</span>
+        )}
         {brand && <p className="product-brand" data-testid={`text-brand-${product.id}`}>{brand}</p>}
         <h2 data-testid={`text-title-${product.id}`}>{product.title}</h2>
         <div className="product-meta">
@@ -269,9 +278,6 @@ function ProductCard({
       </div>
       {ranked && rank !== undefined && (
         <div className="ranking-panel" data-testid={`panel-ranking-${product.id}`}>
-          <div className="ranking-topline">
-            <span className="ranking-rank" data-testid={`text-rank-${product.id}`}>#{rank} for you</span>
-          </div>
           {featured && !closeCall && rank === 1 && (
             <>
               <div className="ranking-explanation">
@@ -292,24 +298,20 @@ function ProductCard({
             </button>
           )}
           {expanded && <>
-            <p className="ranking-breakdown-title">Score breakdown</p>
-            <div className="ranking-line">
-              <span>Price<small>Channel3 offer price</small></span>
-              <strong>
-                {valueDimension && valueDimension.score !== null
-                  ? `${valueDimension.score}/100 × ${valueDimension.weight} (${formatImportance(valueDimension.importance)})`
-                  : 'Not scored'}
-              </strong>
-            </div>
-            <div className="prototype-signals">
-              <p className="prototype-signals-title">Prototype owner signals</p>
-              <p className="prototype-signals-note">Demo values, separate from Channel3 product facts.</p>
-              {ranked.dimensions.filter((dimension) => dimension.source === 'prototype').map((dimension) => (
-                <div className="ranking-line" key={dimension.key}>
-                  <span>{dimension.label}<small className="prototype-label">Prototype</small></span>
-                  <strong>{dimension.score}/100 × {dimension.weight} ({formatImportance(dimension.importance)})</strong>
-                </div>
-              ))}
+            <div className="priority-breakdown">
+              <strong>Priority breakdown</strong>
+              {ranked.dimensions.map((dimension) => {
+                const signalDescription = dimension.key === 'value'
+                  ? valueDimension?.score === null || valueDimension?.score === undefined ? 'Price not comparable' : 'Channel3 offer price'
+                  : (dimension.score ?? 0) >= 67 ? 'Stronger demo signal' : (dimension.score ?? 0) >= 34 ? 'Mid-range demo signal' : 'Lighter demo signal';
+                return (
+                  <div className="priority-breakdown-row" key={dimension.key}>
+                    <span>{dimension.label}{dimension.source === 'prototype' && <small className="prototype-label">Prototype</small>}</span>
+                    <span>{formatImportance(dimension.importance)} priority · {signalDescription}</span>
+                  </div>
+                );
+              })}
+              <p>Price uses comparable Channel3 offer prices. Materials, Quality, and Longevity are deterministic prototype signals, not Channel3 facts.</p>
             </div>
           </>}
         </div>
@@ -321,31 +323,21 @@ function ProductCard({
 function PreferenceControls({
   preferences,
   onChange,
-  valueAvailable,
-  rankingActive,
   selectedPreset,
   onChoosePreset,
 }: {
   preferences: Preferences;
   onChange: (key: PreferenceKey, value: PreferenceImportance) => void;
-  valueAvailable: boolean;
-  rankingActive: boolean;
   selectedPreset: string;
   onChoosePreset: (presetName: string) => void;
 }) {
   return (
     <section className="preference-panel" aria-label="Priority controls and presets" data-testid="panel-preferences">
       <div className="preference-heading">
-        <div>
-          <span className="section-kicker">PERSONALIZE THIS SEARCH</span>
-          <h3>What matters most?</h3>
-        </div>
-        <span className="preference-status" data-testid="status-ranking">
-          {rankingActive ? 'RANKING UPDATED' : 'CHOOSE ALL FOUR'}
-        </span>
+        <h3>What matters for this choice?</h3>
       </div>
       <div className="priority-presets">
-        <span className="preset-heading">PRESETS</span>
+        <span className="preset-heading">Preset priorities</span>
         <div className="preset-list">
           {priorityPresets.map((preset) => (
             <button
@@ -356,6 +348,7 @@ function PreferenceControls({
               onClick={() => onChoosePreset(preset.name)}
             >
               <strong>{preset.name}</strong>
+              <span>{preset.description}</span>
             </button>
           ))}
         </div>
@@ -378,16 +371,7 @@ function PreferenceControls({
           </label>
         ))}
       </div>
-      <p className="preference-method">
-        Score = weighted average of 0–100 dimensions, with High / Medium / Low weighted 3 / 2 / 1.
-        {valueAvailable
-          ? ' Price uses same-currency Channel3 offer prices; lower prices score higher, normalized within these products.'
-          : ' Price is omitted when prices are missing or use different currencies.'}
-        {' '}Ties keep Channel3’s original order.
-      </p>
-      <p className="preference-prototype-note">
-        <strong>Prototype owner signals</strong> are deterministic demo values based on product IDs, not Channel3 facts.
-      </p>
+      <p className="priority-instruction">Set all four, or start from a preset.</p>
     </section>
   );
 }
@@ -425,16 +409,20 @@ export default function ProductSearch() {
     },
   );
 
+  function startSearch(nextQuery: string) {
+    const next = nextQuery.trim().slice(0, 200);
+    if (!next) return;
+    setInput(next);
+    setSubmittedQuery(next);
+    setPreferences({ materials: '', quality: '', value: '', longevity: '' });
+    setSelectedPreset('');
+    setExpandedBreakdowns([]);
+    setShowAllProducts(false);
+  }
+
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const next = input.trim().slice(0, 200);
-    if (next) {
-      setSubmittedQuery(next);
-      setPreferences({ materials: '', quality: '', value: '', longevity: '' });
-      setSelectedPreset('');
-      setExpandedBreakdowns([]);
-      setShowAllProducts(false);
-    }
+    startSearch(input);
   }
 
   function choosePreset(presetName: string) {
@@ -461,7 +449,6 @@ export default function ProductSearch() {
   const rankingActive = hasAllPreferences(preferences);
   const rankedProducts = rankingActive ? rankProducts(products, preferences) : [];
   const closeCall = rankedProducts.length > 1 && rankedProducts[0].score - rankedProducts[1].score < 5;
-  const valueAvailable = getValueScores(products).size > 0;
   const visibleProducts = showAllProducts ? rankedProducts : rankedProducts.slice(0, 3);
 
   return (
@@ -472,14 +459,13 @@ export default function ProductSearch() {
           <span>raete</span>
         </a>
         <div className="topbar-tools">
-          <div className="topbar-note"><span className="live-dot" /> PRODUCT SEARCH <span className="topbar-divider">/</span> CHANNEL3</div>
           <button
             className="prototype-disclosure-toggle"
             type="button"
             aria-expanded={prototypeDisclosureOpen}
             onClick={() => setPrototypeDisclosureOpen((open) => !open)}
           >
-            Prototype data <ChevronDown size={13} />
+            <span className="prototype-disclosure-dot" /> Prototype data <ChevronDown size={13} />
           </button>
           {prototypeDisclosureOpen && (
             <div className="prototype-disclosure">
@@ -491,10 +477,15 @@ export default function ProductSearch() {
         </div>
       </header>
 
-      <section className="search-intro">
-        <div className="eyebrow"><span>01</span> THE OPEN WEB, IN VIEW</div>
-        <h1>Find the<br /><em>piece.</em></h1>
-        <p className="intro-copy">Search across retailers.<br className="desktop-break" /> See what’s out there, as it is.</p>
+      <section className={`search-intro${submittedQuery ? ' search-intro-compact' : ''}`}>
+        <div className="search-copy">
+          {!submittedQuery && (
+            <>
+              <h1>Which one wins for you?</h1>
+              <p className="intro-copy">Set what matters. See which one comes out ahead, and why.</p>
+            </>
+          )}
+        </div>
         <form className="search-form" onSubmit={onSubmit}>
           <Search className="search-icon" size={20} strokeWidth={1.7} aria-hidden="true" />
           <input
@@ -510,24 +501,22 @@ export default function ProductSearch() {
             {query.isFetching ? <span className="button-loading" /> : <>Search <span className="button-arrow">↗</span></>}
           </button>
         </form>
-        <div className="search-foot"><span>SEARCH THE CATALOG</span><span>UP TO 8 RESULTS</span></div>
+        {!submittedQuery && (
+          <button className="example-search" type="button" onClick={() => startSearch('black mini skirt')}>
+            Try “black mini skirt” <ArrowUpRight size={14} />
+          </button>
+        )}
       </section>
 
       {submittedQuery ? (
         <section className="results-section" aria-live="polite">
           <div className="results-heading">
-            <div>
-              <span className="section-kicker">YOUR SEARCH</span>
-              <h2>{submittedQuery}</h2>
-            </div>
-            {query.isSuccess && <div className="result-count" data-testid="text-result-count">{products.length} {products.length === 1 ? 'RESULT' : 'RESULTS'}</div>}
+            <div><h2>{submittedQuery}</h2></div>
           </div>
           {query.isSuccess && !query.isFetching && products.length > 0 && (
             <PreferenceControls
               preferences={preferences}
               onChange={changePriority}
-              valueAvailable={valueAvailable}
-              rankingActive={rankingActive}
               selectedPreset={selectedPreset}
               onChoosePreset={choosePreset}
             />
@@ -547,18 +536,15 @@ export default function ProductSearch() {
           {query.isSuccess && !query.isFetching && products.length === 0 && (
             <div className="state-panel empty-panel" data-testid="status-empty">
               <div className="state-mark empty-mark">—</div>
-              <div><h3>No pieces found.</h3><p>Try a different description.</p></div>
+              <div><h3>No products found.</h3><p>Try a different description.</p></div>
             </div>
           )}
           {query.isSuccess && !query.isFetching && products.length > 0 && (
             rankingActive ? (
               <section className="ranked-results" aria-label="Ranked products" data-testid="list-products">
-                {closeCall && (
-                  <div className="close-call-notice">
-                    <h3>No clear winner for your priorities</h3>
-                    <p>The top two products are nearly even across the priorities you selected.</p>
-                  </div>
-                )}
+                {closeCall
+                  ? <div className="close-call-notice"><h3>No clear winner for your priorities</h3><p>The top two products are nearly even across your priorities.</p></div>
+                  : <div className="ranked-results-heading">Ranked by your priorities</div>}
                 {!closeCall && rankedProducts.length > 0 && (
                   <ProductCard
                     key={rankedProducts[0].product.id}
@@ -582,6 +568,7 @@ export default function ProductSearch() {
                         ranked={row}
                         rank={index + 1}
                         closeCall
+                        compact
                         expanded={expandedBreakdowns.includes(row.product.id)}
                         onToggleBreakdown={() => toggleBreakdown(row.product.id)}
                       />
@@ -598,6 +585,7 @@ export default function ProductSearch() {
                         index={index}
                         ranked={row}
                         rank={rank}
+                        compact
                         expanded={expandedBreakdowns.includes(row.product.id)}
                         onToggleBreakdown={() => toggleBreakdown(row.product.id)}
                       />
@@ -611,29 +599,18 @@ export default function ProductSearch() {
                 )}
               </section>
             ) : (
-              <div className="product-grid" data-testid="list-products">
-                {products.map((product, index) => (
-                  <ProductCard key={product.id} product={product} index={index} />
-                ))}
-              </div>
+              <section className="unranked-products" aria-label="Unranked products">
+                <p className="unranked-products-line">
+                  {products.length} {products.length === 1 ? 'product' : 'products'} from Channel3 · not ranked yet
+                </p>
+                <div className="product-grid" data-testid="list-products">
+                  {products.map((product, index) => <ProductCard key={product.id} product={product} index={index} />)}
+                </div>
+              </section>
             )
           )}
         </section>
-      ) : (
-        <section className="idle-section" data-testid="status-idle">
-          <div className="idle-index">A—Z <span>·</span> OPEN RETAIL</div>
-          <div className="idle-content">
-            <div className="idle-rule" />
-            <p>Good things are<br />already out there.</p>
-          </div>
-          <span className="idle-caption">START WITH WHAT YOU’RE LOOKING FOR</span>
-        </section>
-      )}
-
-      <footer className="footer">
-        <span>RAETE <span className="footer-slash">/</span> A WINDOW INTO WHAT’S AVAILABLE</span>
-        <span>PRODUCTS, ONE SEARCH AWAY</span>
-      </footer>
+      ) : null}
     </main>
   );
 }
