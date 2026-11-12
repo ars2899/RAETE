@@ -20,3 +20,9 @@ Use `red leather shoulder bag` as the canonical final demo query from this point
 **Why:** The user selected this query after live results naturally produced different winners between Materials First and Keep It Forever.
 
 **How to apply:** Use it for demo verification, the final manual PayPal Sandbox checkout, and final desktop/mobile QA. Do not change scores or ranking logic to preserve a particular winner.
+
+AI explanations must explicitly label Materials, Quality, and Longevity as `Prototype` whenever discussing their synthetic signals.
+
+**Why:** The user required explicit provenance, and model instructions alone previously failed to retain the label.
+
+**How to apply:** Enforce provenance in returned prose as well as prompting for it. This is a presentation safeguard, not permission to change rankings or scores.

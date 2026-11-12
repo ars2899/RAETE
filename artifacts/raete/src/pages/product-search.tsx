@@ -77,19 +77,19 @@ export const presets: {
   {
     id: 'materials-first',
     name: 'Materials First',
-    description: 'Materials high · Quality and Longevity medium · Price low',
+    description: "What it's made of comes first.",
     priorities: { materials: 'high', quality: 'medium', price: 'low', longevity: 'medium' },
   },
   {
     id: 'keep-forever',
     name: 'Keep It Forever',
-    description: 'Quality and Longevity high · Materials medium · Price low',
+    description: 'Quality and longevity come first.',
     priorities: { materials: 'medium', quality: 'high', price: 'low', longevity: 'high' },
   },
   {
     id: 'price-conscious',
     name: 'Price Conscious',
-    description: 'Price high · Quality medium · Materials and Longevity low',
+    description: 'Price comes first.',
     priorities: { materials: 'low', quality: 'medium', price: 'high', longevity: 'low' },
   },
 ];
@@ -357,7 +357,7 @@ function ScoreBreakdown({ ranked }: { ranked: RankedProduct }) {
         </div>
       ))}
       <p className="breakdown-note">
-        The overall score is used only to order results and is never shown. Prototype dimensions are synthetic demo signals, not owner evidence.
+        The overall score is used only to order products and is never shown. Prototype dimensions are synthetic demo signals, not owner evidence.
       </p>
     </div>
   );
@@ -374,7 +374,7 @@ function Alternative({
   const price = formatPrice(offer);
   return (
     <article className="alternative-row" data-testid={`card-ranked-product-${ranked.product.id}`}>
-      <span className="alternative-rank">0{rank}</span>
+      <span className="alternative-rank" aria-label={`#${rank} for you`}>#{rank}</span>
       <ProductImage product={ranked.product} className="alternative-image" />
       <div className="alternative-copy">
         <span className="alternative-brand">{ranked.product.brands?.find((item) => item.name)?.name || offer?.domain || 'Retail listing'}</span>
@@ -423,13 +423,13 @@ function PriorityPanel({
     <section className="priority-panel" aria-label="Ranking priorities" data-testid="panel-priorities">
       <div className="priority-topline">
         <div>
-          <span className="eyebrow">YOUR DECISION, YOUR WAY</span>
-          <h2>What matters most?</h2>
+          <h2>What matters for this choice?</h2>
         </div>
         <span className={`ranking-state ${rankingActive ? 'is-ready' : ''}`} data-testid="status-ranking">
-          <span />{rankingActive ? 'Ranking personalized' : 'Not ranked yet'}
+          {rankingActive && <><span />Ranked by your priorities</>}
         </span>
       </div>
+      <p className="eyebrow">Preset priorities</p>
       <div className="preset-list" aria-label="Priority presets">
         {presets.map((preset) => (
           <button
@@ -473,10 +473,8 @@ function PriorityPanel({
       <div className="method-note">
         <Info size={15} aria-hidden="true" />
         <p>
-          High / Medium / Low use weights 3 / 2 / 1. {priceAvailable
-            ? 'Price uses the first Channel3 offer with a valid amount and currency for each result. Within one shared currency, score = round((highest price − this price) ÷ (highest price − lowest price) × 100); equal prices all score 100.'
-            : 'Price is omitted from ranking when any result lacks a priced offer or the selected offers use different currencies.'}
-          {' '}Ties keep Channel3’s original order.
+          Set all four, or start from a preset.
+          {!priceAvailable && ' Price is not included because the available prices are not comparable.'}
         </p>
       </div>
     </section>
@@ -681,15 +679,16 @@ export default function ProductSearch() {
           <span className="wordmark-mark" aria-hidden="true"><i /></span>
           <span>raete</span>
         </a>
-        <div className="header-context"><span className="header-live-dot" /> PRODUCT SEARCH <b>/</b> CHANNEL3</div>
+        <div className="header-context"><span className="header-live-dot" /> Product search <b>/</b> Channel3</div>
       </header>
 
       <section className="decision-hero">
-        <div className="hero-overline"><span>01</span> A BETTER WAY TO CHOOSE</div>
-        <div className="hero-heading">
-          <h1>Find the one<br /><em>worth keeping.</em></h1>
-          <p>Search real products across retailers.<br />Choose what matters. See why it fits.</p>
-        </div>
+        {!submittedQuery && (
+          <div className="hero-heading">
+            <h1>Which one wins for you?</h1>
+            <p>Set what matters. See which one comes out ahead, and why.</p>
+          </div>
+        )}
         <form className="decision-search" onSubmit={onSubmit}>
           <Search size={19} strokeWidth={1.7} aria-hidden="true" />
           <input
@@ -705,20 +704,17 @@ export default function ProductSearch() {
             {query.isFetching ? <LoaderCircle size={16} className="search-spinner" /> : <>Search <ArrowUpRight size={15} /></>}
           </button>
         </form>
-        <div className="search-meta"><span>LIVE RETAIL SEARCH</span><span>UP TO 8 RESULTS</span></div>
       </section>
 
       {!submittedQuery ? (
         <section className="first-search-note" data-testid="status-idle">
-          <span>THE OPEN WEB, IN VIEW</span>
-          <p>Good things are already out there.<br />Start with what you’re looking for.</p>
           <div className="first-search-rule" />
         </section>
       ) : (
         <section className="decision-results" aria-live="polite">
           <div className="search-results-heading">
-            <div><span className="eyebrow">YOUR SEARCH</span><h2>{submittedQuery}</h2></div>
-            {query.isSuccess && <span className="result-count" data-testid="text-result-count">{products.length} {products.length === 1 ? 'RESULT' : 'RESULTS'}</span>}
+            <div><h2>{submittedQuery}</h2></div>
+            {query.isSuccess && <span className="result-count" data-testid="text-result-count">{products.length} products from Channel3{!rankingActive && ' · not ranked yet'}</span>}
           </div>
 
           {query.isSuccess && !query.isFetching && products.length > 0 && (
@@ -771,13 +767,13 @@ export default function ProductSearch() {
               <div className={`winner-card ${closeCall ? 'winner-close' : ''}`} data-testid={`card-winner-${top.product.id}`}>
                 <div className="winner-photo">
                   <ProductImage product={top.product} />
-                  <span className="winner-badge">{closeCall ? 'CLOSE CALL' : 'YOUR BEST FIT'}</span>
+                  <span className="winner-badge">#1 for you</span>
                   <span className="winner-index">01 / {String(products.length).padStart(2, '0')}</span>
                 </div>
                 <div className="winner-details">
                   <div className="winner-intro">
-                    <span className="eyebrow">{closeCall ? 'A CLOSE MATCH FOR YOU' : 'WHY IT’S #1 FOR YOU'}</span>
-                    <span className="match-mark"><Sparkles size={14} /> {closeCall ? 'NEARLY EVEN' : 'PRIORITY MATCH'}</span>
+                    <span className="eyebrow">Why it's #1 for you</span>
+                    <span className="match-mark"><Sparkles size={14} /> {closeCall ? 'Close call' : 'Priority match'}</span>
                   </div>
                   <LiveProductFacts product={top.product} />
                   {closeCall && second ? (
@@ -787,14 +783,13 @@ export default function ProductSearch() {
                     </div>
                   ) : (
                     <div className="winner-reason" data-testid="text-winner-reason">
-                      <span>WHY IT’S #1</span>
                       <p>{getWinnerReason(top, second)}</p>
                     </div>
                   )}
                   {second && (
                     <div className="ahead-note" data-testid="text-ahead-comparison">
                       <ArrowDownRight size={16} aria-hidden="true" />
-                      <div><span>AHEAD OF #2 BECAUSE…</span><p>{closeCall ? getTradeoffText(top, second) : getWinnerReason(top, second)}</p></div>
+                      <div><span>Ahead of #2 because…</span><p>{closeCall ? getTradeoffText(top, second) : getWinnerReason(top, second)}</p></div>
                     </div>
                   )}
                   <div className="ai-explanation" data-testid="panel-ai-explanation" aria-live="polite">
@@ -836,8 +831,8 @@ export default function ProductSearch() {
               {shownAlternatives.length > 0 && (
                 <section className="alternatives-section" aria-label="Other close fits">
                   <div className="alternatives-heading">
-                    <div><span className="eyebrow">OTHER OPTIONS</span><h2>Worth a closer look</h2></div>
-                    <span>IN CHANNEL3 ORDER WHEN TIED</span>
+                    <div><span className="eyebrow">Other options</span><h2>Worth a closer look</h2></div>
+                    <span>In Channel3 order when tied</span>
                   </div>
                   <div className="alternatives-list">
                     {shownAlternatives.map((item, index) => <Alternative key={item.product.id} ranked={item} rank={index + 2} />)}
@@ -861,15 +856,15 @@ export default function ProductSearch() {
       )}
 
       <footer className="decision-footer">
-        <span>RAETE <b>/</b> A WINDOW INTO WHAT’S AVAILABLE</span>
-        <span>REAL LISTINGS. CLEARER CHOICES.</span>
+        <span>RAETE <b>/</b> A window into what’s available</span>
+        <span>Real listings. Clearer choices.</span>
       </footer>
 
-      <div className="prototype-disclosure">
+      <div className="decision-prototype-disclosure">
         {prototypeOpen && (
           <section className="prototype-popover" id="prototype-explainer" role="dialog" aria-label="Prototype data details">
             <div className="prototype-popover-heading">
-              <div><span className="eyebrow">A NOTE ON EVIDENCE</span><h2>Prototype data</h2></div>
+              <div><span className="eyebrow">A note on evidence</span><h2>Prototype data</h2></div>
               <button type="button" aria-label="Close prototype data details" onClick={() => setPrototypeOpen(false)} data-testid="button-close-prototype"><X size={16} /></button>
             </div>
             <div className="evidence-row live-evidence"><span className="evidence-dot" /><p><strong>Live from Channel3</strong>Product titles, images, brand names, retailer links, offer prices, and listing details.</p></div>
