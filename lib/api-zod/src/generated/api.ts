@@ -18,158 +18,47 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * @summary Get a summary of the RAETE catalog
+ * @summary Search products through Channel3
  */
-export const GetOverviewResponse = zod.object({
-  "productCount": zod.number().int(),
-  "ownerReportCount": zod.number().int(),
-  "categories": zod.array(zod.object({
-  "name": zod.string(),
-  "productCount": zod.number().int(),
-  "ownerReportCount": zod.number().int()
-}))
+export const searchChannel3ProductsQueryQueryMax = 200;
+
+
+
+export const SearchChannel3ProductsQueryParams = zod.object({
+  "query": zod.coerce.string().min(1).max(searchChannel3ProductsQueryQueryMax)
 })
 
-
-/**
- * @summary Search and rank catalog products
- */
-export const listProductsQueryQMax = 120;
-
-export const listProductsQueryCategoryMax = 80;
-
-export const listProductsQueryPriorityDefault = `balanced`;
-export const listProductsQueryMaxPriceCentsMin = 0;
+export const searchChannel3ProductsResponseProductsMax = 8;
 
 
 
-export const ListProductsQueryParams = zod.object({
-  "q": zod.coerce.string().max(listProductsQueryQMax).optional(),
-  "category": zod.coerce.string().max(listProductsQueryCategoryMax).optional(),
-  "priority": zod.enum(['balanced', 'durability', 'value']).default(listProductsQueryPriorityDefault),
-  "maxPriceCents": zod.coerce.number().int().min(listProductsQueryMaxPriceCentsMin).optional()
-})
-
-export const ListProductsResponseItem = zod.object({
-  "id": zod.number().int(),
-  "slug": zod.string(),
-  "name": zod.string(),
-  "brand": zod.string(),
-  "category": zod.string(),
-  "description": zod.string(),
-  "currency": zod.string(),
-  "facts": zod.array(zod.string()),
-  "productUrl": zod.string().url(),
-  "productSource": zod.string(),
-  "priceSource": zod.string(),
-  "priceCents": zod.number().int().nullable(),
-  "priceCheckedAt": zod.coerce.date().nullable(),
-  "batteryHours": zod.number().nullish(),
-  "weightGrams": zod.number().nullish(),
-  "ownerReportCount": zod.number().int(),
-  "averageRating": zod.number().nullable(),
-  "averageReliability": zod.number().nullable(),
-  "wouldBuyAgainPercent": zod.number().nullable(),
-  "averageOwnershipMonths": zod.number().nullable(),
-  "raeteScore": zod.number().nullable(),
-  "confidence": zod.enum(['no_reports', 'early', 'emerging', 'established']),
-  "rankingReason": zod.string()
-})
-export const ListProductsResponse = zod.array(ListProductsResponseItem)
-
-
-/**
- * @summary Get a product and its owner reports
- */
-
-
-
-export const GetProductParams = zod.object({
-  "productId": zod.coerce.number().int().min(1)
-})
-
-export const GetProductResponse = zod.object({
-  "id": zod.number().int(),
-  "slug": zod.string(),
-  "name": zod.string(),
-  "brand": zod.string(),
-  "category": zod.string(),
-  "description": zod.string(),
-  "currency": zod.string(),
-  "facts": zod.array(zod.string()),
-  "productUrl": zod.string().url(),
-  "productSource": zod.string(),
-  "priceSource": zod.string(),
-  "priceCents": zod.number().int().nullable(),
-  "priceCheckedAt": zod.coerce.date().nullable(),
-  "batteryHours": zod.number().nullish(),
-  "weightGrams": zod.number().nullish(),
-  "ownerReportCount": zod.number().int(),
-  "averageRating": zod.number().nullable(),
-  "averageReliability": zod.number().nullable(),
-  "wouldBuyAgainPercent": zod.number().nullable(),
-  "averageOwnershipMonths": zod.number().nullable(),
-  "raeteScore": zod.number().nullable(),
-  "confidence": zod.enum(['no_reports', 'early', 'emerging', 'established']),
-  "rankingReason": zod.string()
-}).and(zod.object({
-  "ownerReports": zod.array(zod.object({
-  "id": zod.number().int(),
-  "productId": zod.number().int(),
-  "displayName": zod.string(),
-  "ownershipMonths": zod.number().int(),
-  "rating": zod.number().int(),
-  "reliabilityRating": zod.number().int(),
-  "wouldBuyAgain": zod.boolean(),
-  "comment": zod.string(),
-  "createdAt": zod.coerce.date()
-}))
-}))
-
-
-/**
- * @summary Submit a product ownership report
- */
-
-
-
-export const CreateOwnerReportParams = zod.object({
-  "productId": zod.coerce.number().int().min(1)
-})
-
-export const createOwnerReportBodyDisplayNameMax = 32;
-
-export const createOwnerReportBodyOwnershipMonthsMin = 0;
-export const createOwnerReportBodyOwnershipMonthsMax = 600;
-
-export const createOwnerReportBodyRatingMax = 5;
-
-export const createOwnerReportBodyReliabilityRatingMax = 5;
-
-export const createOwnerReportBodyCommentMin = 10;
-export const createOwnerReportBodyCommentMax = 1200;
-
-
-
-export const CreateOwnerReportBody = zod.object({
-  "displayName": zod.string().max(createOwnerReportBodyDisplayNameMax).optional(),
-  "ownershipMonths": zod.number().int().min(createOwnerReportBodyOwnershipMonthsMin).max(createOwnerReportBodyOwnershipMonthsMax),
-  "rating": zod.number().int().min(1).max(createOwnerReportBodyRatingMax),
-  "reliabilityRating": zod.number().int().min(1).max(createOwnerReportBodyReliabilityRatingMax),
-  "wouldBuyAgain": zod.boolean(),
-  "comment": zod.string().min(createOwnerReportBodyCommentMin).max(createOwnerReportBodyCommentMax)
-})
-
-export const CreateOwnerReportResponse = zod.object({
-  "id": zod.number().int(),
-  "productId": zod.number().int(),
-  "displayName": zod.string(),
-  "ownershipMonths": zod.number().int(),
-  "rating": zod.number().int(),
-  "reliabilityRating": zod.number().int(),
-  "wouldBuyAgain": zod.boolean(),
-  "comment": zod.string(),
-  "createdAt": zod.coerce.date()
+export const SearchChannel3ProductsResponse = zod.object({
+  "products": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "brands": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "name": zod.string().optional()
+})).optional(),
+  "images": zod.array(zod.object({
+  "url": zod.string().url(),
+  "cleaned_url": zod.string().url().nullish(),
+  "is_main_image": zod.boolean().optional(),
+  "alt_text": zod.string().nullish()
+})).optional(),
+  "offers": zod.array(zod.object({
+  "url": zod.string().url(),
+  "domain": zod.string(),
+  "price": zod.object({
+  "price": zod.number().optional(),
+  "amount": zod.number().optional(),
+  "currency": zod.string().optional(),
+  "compare_at_price": zod.number().nullish()
+}).optional(),
+  "availability": zod.string().nullish(),
+  "condition": zod.string().nullish()
+})).optional()
+})).max(searchChannel3ProductsResponseProductsMax)
 })
 
 

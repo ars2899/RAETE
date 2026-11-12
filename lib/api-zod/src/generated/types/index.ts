@@ -6,14 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './categorySummary';
+export * from './channel3Brand';
+export * from './channel3Image';
+export * from './channel3Offer';
+export * from './channel3Price';
+export * from './channel3Product';
+export * from './channel3SearchResults';
 export * from './error';
 export * from './healthStatus';
-export * from './listProductsParams';
-export * from './listProductsPriority';
-export * from './overview';
-export * from './ownerReport';
-export * from './ownerReportInput';
-export * from './product';
-export * from './productConfidence';
-export * from './productDetail';
+export * from './searchChannel3ProductsParams';

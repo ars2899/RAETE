@@ -9,131 +9,60 @@ export interface HealthStatus {
   status: string;
 }
 
-export type ProductConfidence = typeof ProductConfidence[keyof typeof ProductConfidence];
-
-
-export const ProductConfidence = {
-  no_reports: 'no_reports',
-  early: 'early',
-  emerging: 'emerging',
-  established: 'established',
-} as const;
-
-export interface Product {
-  id: number;
-  slug: string;
-  name: string;
-  brand: string;
-  category: string;
-  description: string;
-  currency: string;
-  facts: string[];
-  productUrl: string;
-  productSource: string;
-  priceSource: string;
-  /** @nullable */
-  priceCents: number | null;
-  /** @nullable */
-  priceCheckedAt: string | null;
-  /** @nullable */
-  batteryHours?: number | null;
-  /** @nullable */
-  weightGrams?: number | null;
-  ownerReportCount: number;
-  /** @nullable */
-  averageRating: number | null;
-  /** @nullable */
-  averageReliability: number | null;
-  /** @nullable */
-  wouldBuyAgainPercent: number | null;
-  /** @nullable */
-  averageOwnershipMonths: number | null;
-  /** @nullable */
-  raeteScore: number | null;
-  confidence: ProductConfidence;
-  rankingReason: string;
-}
-
-export interface OwnerReport {
-  id: number;
-  productId: number;
-  displayName: string;
-  ownershipMonths: number;
-  rating: number;
-  reliabilityRating: number;
-  wouldBuyAgain: boolean;
-  comment: string;
-  createdAt: string;
-}
-
-export type ProductDetail = Product & {
-  ownerReports: OwnerReport[];
-};
-
-export interface OwnerReportInput {
-  /** @maxLength 32 */
-  displayName?: string;
-  /**
-     * @minimum 0
-     * @maximum 600
-     */
-  ownershipMonths: number;
-  /**
-     * @minimum 1
-     * @maximum 5
-     */
-  rating: number;
-  /**
-     * @minimum 1
-     * @maximum 5
-     */
-  reliabilityRating: number;
-  wouldBuyAgain: boolean;
-  /**
-     * @minLength 10
-     * @maxLength 1200
-     */
-  comment: string;
-}
-
-export interface CategorySummary {
-  name: string;
-  productCount: number;
-  ownerReportCount: number;
-}
-
-export interface Overview {
-  productCount: number;
-  ownerReportCount: number;
-  categories: CategorySummary[];
-}
-
 export interface Error {
   error: string;
 }
 
-export type ListProductsParams = {
+export interface Channel3Brand {
+  id?: string;
+  name?: string;
+}
+
+export interface Channel3Image {
+  url: string;
+  /** @nullable */
+  cleaned_url?: string | null;
+  is_main_image?: boolean;
+  /** @nullable */
+  alt_text?: string | null;
+}
+
+export interface Channel3Price {
+  price?: number;
+  amount?: number;
+  currency?: string;
+  /** @nullable */
+  compare_at_price?: number | null;
+}
+
+export interface Channel3Offer {
+  url: string;
+  domain: string;
+  price?: Channel3Price;
+  /** @nullable */
+  availability?: string | null;
+  /** @nullable */
+  condition?: string | null;
+}
+
+export interface Channel3Product {
+  id: string;
+  title: string;
+  brands?: Channel3Brand[];
+  images?: Channel3Image[];
+  offers?: Channel3Offer[];
+}
+
+export interface Channel3SearchResults {
+  /** @maxItems 8 */
+  products: Channel3Product[];
+}
+
+export type SearchChannel3ProductsParams = {
 /**
- * @maxLength 120
+ * @minLength 1
+ * @maxLength 200
  */
-q?: string;
-/**
- * @maxLength 80
- */
-category?: string;
-priority?: ListProductsPriority;
-/**
- * @minimum 0
- */
-maxPriceCents?: number;
+query: string;
 };
-
-export type ListProductsPriority = typeof ListProductsPriority[keyof typeof ListProductsPriority];
-
-
-export const ListProductsPriority = {
-  balanced: 'balanced',
-  durability: 'durability',
-  value: 'value',
-} as const;
 

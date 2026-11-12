@@ -6,8 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CategorySummary {
-  name: string;
-  productCount: number;
-  ownerReportCount: number;
-}
+export type SearchChannel3ProductsParams = {
+/**
+ * @minLength 1
+ * @maxLength 200
+ */
+query: string;
+};

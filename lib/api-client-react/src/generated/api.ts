@@ -6,32 +6,24 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
-  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
-  MutationFunction,
   QueryFunction,
   QueryKey,
-  UseMutationOptions,
-  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
+  Channel3SearchResults,
   Error,
   HealthStatus,
-  ListProductsParams,
-  Overview,
-  OwnerReport,
-  OwnerReportInput,
-  Product,
-  ProductDetail
+  SearchChannel3ProductsParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
-import type { ErrorType , BodyType } from '../custom-fetch';
+import type { ErrorType } from '../custom-fetch';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -135,84 +127,7 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
-export const getGetOverviewUrl = () => {
-
-
-
-
-  return `/api/overview`
-}
-
-/**
- * @summary Get a summary of the RAETE catalog
- */
-export const getOverview = async ( options?: Parameters<typeof customFetch>[1]): Promise<Overview> => {
-
-  return customFetch<Overview>(getGetOverviewUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetOverviewQueryKey = () => {
-    return [
-    `/api/overview`
-    ] as const;
-    }
-
-
-export const getGetOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getOverview>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetOverviewQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOverview>>> = ({ signal }) => getOverview({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOverview>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getOverview>>>
-export type GetOverviewQueryError = ErrorType<unknown>
-
-
-/**
- * @summary Get a summary of the RAETE catalog
- */
-
-export function useGetOverview<TData = Awaited<ReturnType<typeof getOverview>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetOverviewQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-
-export const getListProductsUrl = (params?: ListProductsParams,) => {
+export const getSearchChannel3ProductsUrl = (params: SearchChannel3ProductsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -224,15 +139,15 @@ export const getListProductsUrl = (params?: ListProductsParams,) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/products?${stringifiedParams}` : `/api/products`
+  return stringifiedParams.length > 0 ? `/api/channel3/search?${stringifiedParams}` : `/api/channel3/search`
 }
 
 /**
- * @summary Search and rank catalog products
+ * @summary Search products through Channel3
  */
-export const listProducts = async (params?: ListProductsParams, options?: Parameters<typeof customFetch>[1]): Promise<Product[]> => {
+export const searchChannel3Products = async (params: SearchChannel3ProductsParams, options?: Parameters<typeof customFetch>[1]): Promise<Channel3SearchResults> => {
 
-  return customFetch<Product[]>(getListProductsUrl(params),
+  return customFetch<Channel3SearchResults>(getSearchChannel3ProductsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -245,45 +160,45 @@ export const listProducts = async (params?: ListProductsParams, options?: Parame
 
 
 
-export const getListProductsQueryKey = (params?: ListProductsParams,) => {
+export const getSearchChannel3ProductsQueryKey = (params?: SearchChannel3ProductsParams,) => {
     return [
-    `/api/products`, ...(params ? [params] : [])
+    `/api/channel3/search`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListProductsQueryOptions = <TData = Awaited<ReturnType<typeof listProducts>>, TError = ErrorType<unknown>>(params?: ListProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getSearchChannel3ProductsQueryOptions = <TData = Awaited<ReturnType<typeof searchChannel3Products>>, TError = ErrorType<Error>>(params: SearchChannel3ProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchChannel3Products>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListProductsQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getSearchChannel3ProductsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProducts>>> = ({ signal }) => listProducts(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchChannel3Products>>> = ({ signal }) => searchChannel3Products(params, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProducts>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchChannel3Products>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type ListProductsQueryResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>
-export type ListProductsQueryError = ErrorType<unknown>
+export type SearchChannel3ProductsQueryResult = NonNullable<Awaited<ReturnType<typeof searchChannel3Products>>>
+export type SearchChannel3ProductsQueryError = ErrorType<Error>
 
 
 /**
- * @summary Search and rank catalog products
+ * @summary Search products through Channel3
  */
 
-export function useListProducts<TData = Awaited<ReturnType<typeof listProducts>>, TError = ErrorType<unknown>>(
- params?: ListProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useSearchChannel3Products<TData = Awaited<ReturnType<typeof searchChannel3Products>>, TError = ErrorType<Error>>(
+ params: SearchChannel3ProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchChannel3Products>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListProductsQueryOptions(params,options)
+  const queryOptions = getSearchChannel3ProductsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -295,170 +210,4 @@ export function useListProducts<TData = Awaited<ReturnType<typeof listProducts>>
 
 
 
-
-export const getGetProductUrl = (productId: number,) => {
-
-
-
-
-  return `/api/products/${productId}`
-}
-
-/**
- * @summary Get a product and its owner reports
- */
-export const getProduct = async (productId: number, options?: Parameters<typeof customFetch>[1]): Promise<ProductDetail> => {
-
-  return customFetch<ProductDetail>(getGetProductUrl(productId),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetProductQueryKey = (productId: number,) => {
-    return [
-    `/api/products/${productId}`
-    ] as const;
-    }
-
-
-export const getGetProductQueryOptions = <TData = Awaited<ReturnType<typeof getProduct>>, TError = ErrorType<Error>>(productId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProduct>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetProductQueryKey(productId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProduct>>> = ({ signal }) => getProduct(productId, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: productId !== null && productId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProduct>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetProductQueryResult = NonNullable<Awaited<ReturnType<typeof getProduct>>>
-export type GetProductQueryError = ErrorType<Error>
-
-
-/**
- * @summary Get a product and its owner reports
- */
-
-export function useGetProduct<TData = Awaited<ReturnType<typeof getProduct>>, TError = ErrorType<Error>>(
- productId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProduct>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetProductQueryOptions(productId,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-
-export const getCreateOwnerReportUrl = (productId: number,) => {
-
-
-
-
-  return `/api/products/${productId}/owner-reports`
-}
-
-/**
- * @summary Submit a product ownership report
- */
-export const createOwnerReport = async (productId: number,
-    ownerReportInput: OwnerReportInput, options?: Parameters<typeof customFetch>[1]): Promise<OwnerReport> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customFetch<OwnerReport>(getCreateOwnerReportUrl(productId),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(ownerReportInput)
-  }
-);}
-
-
-
-
-
-export const getCreateOwnerReportMutationKey = () => ['createOwnerReport'] as const;
-
-export const getCreateOwnerReportMutationOptions = <TError = ErrorType<Error>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOwnerReport>>, TError,CreateOwnerReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createOwnerReport>>, TError,CreateOwnerReportMutationVariables, TContext> => {
-
-const mutationKey = getCreateOwnerReportMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOwnerReport>>, CreateOwnerReportMutationVariables> = (props) => {
-          const {productId,data} = props ?? {};
-
-          return  createOwnerReport(productId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateOwnerReportMutationResult = NonNullable<Awaited<ReturnType<typeof createOwnerReport>>>
-    export type CreateOwnerReportMutationBody = BodyType<OwnerReportInput>
-    export type CreateOwnerReportMutationError = ErrorType<Error>
-    export type CreateOwnerReportMutationVariables = {productId: number;data: BodyType<OwnerReportInput>}
-
-    /**
- * @summary Submit a product ownership report
- */
-export const useCreateOwnerReport = <TError = ErrorType<Error>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOwnerReport>>, TError,CreateOwnerReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof createOwnerReport>>,
-        TError,
-        CreateOwnerReportMutationVariables,
-        TContext
-      > => {
-      return useMutation(getCreateOwnerReportMutationOptions(options));
-    }
 
