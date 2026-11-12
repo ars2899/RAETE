@@ -1,0 +1,1 @@
+- [Ranking integrity](ranking-integrity.md) — never force different preset winners; explanations must reflect priorities and weighted advantages.
