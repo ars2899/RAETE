@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "RAETE"
+description = "A product research and recommendation app that helps shoppers decide what is worth buying using transparent product facts, personalized rankings, and community owner reports."
+version = "1.0.0"
+id = "artifacts/raete"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18444
+
+[services.development]
+run = "pnpm --filter @workspace/raete run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/raete", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/raete/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18444"
+BASE_PATH = "/"

@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: products
+    description: Product catalog and owner reports
+  - name: overview
+    description: Catalog overview
 paths:
   /healthz:
     get:
@@ -24,6 +28,120 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /overview:
+    get:
+      operationId: getOverview
+      tags: [overview]
+      summary: Get a summary of the RAETE catalog
+      responses:
+        "200":
+          description: Catalog totals and categories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Overview"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: Search and rank catalog products
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 120
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 80
+        - name: priority
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [balanced, durability, value]
+            default: balanced
+        - name: maxPriceCents
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Products ordered for the selected shopper priority
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+  /products/{productId}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a product and its owner reports
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Product facts, score, and owner reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /products/{productId}/owner-reports:
+    post:
+      operationId: createOwnerReport
+      tags: [products]
+      summary: Submit a product ownership report
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerReportInput"
+      responses:
+        "201":
+          description: Owner report saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerReport"
+        "400":
+          description: Invalid report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +151,188 @@ components:
           type: string
       required:
         - status
+    Product:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - brand
+        - category
+        - description
+        - currency
+        - facts
+        - productUrl
+        - productSource
+        - priceSource
+        - priceCents
+        - priceCheckedAt
+        - ownerReportCount
+        - averageRating
+        - averageReliability
+        - wouldBuyAgainPercent
+        - averageOwnershipMonths
+        - raeteScore
+        - confidence
+        - rankingReason
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        currency:
+          type: string
+        facts:
+          type: array
+          items:
+            type: string
+        productUrl:
+          type: string
+          format: uri
+        productSource:
+          type: string
+        priceSource:
+          type: string
+        priceCents:
+          type: ["integer", "null"]
+        priceCheckedAt:
+          type: ["string", "null"]
+          format: date-time
+        batteryHours:
+          type: ["number", "null"]
+        weightGrams:
+          type: ["number", "null"]
+        ownerReportCount:
+          type: integer
+        averageRating:
+          type: ["number", "null"]
+        averageReliability:
+          type: ["number", "null"]
+        wouldBuyAgainPercent:
+          type: ["number", "null"]
+        averageOwnershipMonths:
+          type: ["number", "null"]
+        raeteScore:
+          type: ["number", "null"]
+        confidence:
+          type: string
+          enum: [no_reports, early, emerging, established]
+        rankingReason:
+          type: string
+    ProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/Product"
+        - type: object
+          required:
+            - ownerReports
+          properties:
+            ownerReports:
+              type: array
+              items:
+                $ref: "#/components/schemas/OwnerReport"
+    OwnerReport:
+      type: object
+      required:
+        - id
+        - productId
+        - displayName
+        - ownershipMonths
+        - rating
+        - reliabilityRating
+        - wouldBuyAgain
+        - comment
+        - createdAt
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        displayName:
+          type: string
+        ownershipMonths:
+          type: integer
+        rating:
+          type: integer
+        reliabilityRating:
+          type: integer
+        wouldBuyAgain:
+          type: boolean
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    OwnerReportInput:
+      type: object
+      required:
+        - ownershipMonths
+        - rating
+        - reliabilityRating
+        - wouldBuyAgain
+        - comment
+      properties:
+        displayName:
+          type: string
+          maxLength: 32
+        ownershipMonths:
+          type: integer
+          minimum: 0
+          maximum: 600
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        reliabilityRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        wouldBuyAgain:
+          type: boolean
+        comment:
+          type: string
+          minLength: 10
+          maxLength: 1200
+    CategorySummary:
+      type: object
+      required:
+        - name
+        - productCount
+        - ownerReportCount
+      properties:
+        name:
+          type: string
+        productCount:
+          type: integer
+        ownerReportCount:
+          type: integer
+    Overview:
+      type: object
+      required:
+        - productCount
+        - ownerReportCount
+        - categories
+      properties:
+        productCount:
+          type: integer
+        ownerReportCount:
+          type: integer
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategorySummary"
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
 
