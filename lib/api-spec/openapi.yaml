@@ -14,6 +14,8 @@ tags:
     description: Channel3 product search proxy
   - name: raete
     description: RAETE explanation
+  - name: paypal
+    description: PayPal Sandbox demo checkout
 paths:
   /healthz:
     get:
@@ -104,6 +106,92 @@ paths:
                 $ref: "#/components/schemas/Error"
         "503":
           description: AI integration is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /paypal/config:
+    get:
+      operationId: getPaypalSandboxConfig
+      tags: [paypal]
+      summary: Get the public PayPal Sandbox client ID
+      responses:
+        "200":
+          description: PayPal Sandbox SDK configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaypalSandboxConfig"
+        "503":
+          description: PayPal Sandbox is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /paypal/orders:
+    post:
+      operationId: createPaypalSandboxOrder
+      tags: [paypal]
+      summary: Create a Sandbox demo order for a live Channel3 product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaypalSandboxOrderInput"
+      responses:
+        "200":
+          description: PayPal Sandbox order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaypalSandboxOrder"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: No safely payable live Channel3 price is available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: PayPal or Channel3 Sandbox request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /paypal/orders/{orderId}/capture:
+    post:
+      operationId: capturePaypalSandboxOrder
+      tags: [paypal]
+      summary: Capture a PayPal Sandbox demo order after approval
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      responses:
+        "200":
+          description: PayPal Sandbox capture result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaypalSandboxCapture"
+        "400":
+          description: Invalid PayPal order ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: PayPal Sandbox capture failed
           content:
             application/json:
               schema:
@@ -211,6 +299,47 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+    PaypalSandboxConfig:
+      type: object
+      required: [clientId]
+      properties:
+        clientId:
+          type: string
+          minLength: 1
+    PaypalSandboxOrderInput:
+      type: object
+      additionalProperties: false
+      required: [query, productId]
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 200
+        productId:
+          type: string
+          minLength: 1
+          maxLength: 160
+    PaypalSandboxOrder:
+      type: object
+      required: [orderId]
+      properties:
+        orderId:
+          type: string
+          minLength: 1
+    PaypalSandboxCapture:
+      type: object
+      required: [status, captureId, amount, currency]
+      properties:
+        status:
+          type: string
+          enum: [COMPLETED]
+        captureId:
+          type: string
+          minLength: 1
+        amount:
+          type: string
+        currency:
+          type: string
     Channel3SearchResults:
       type: object
       required: [products]

@@ -156,6 +156,44 @@ export interface RaeteExplanation {
   explanation: string;
 }
 
+export interface PaypalSandboxConfig {
+  /** @minLength 1 */
+  clientId: string;
+}
+
+export interface PaypalSandboxOrderInput {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  query: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  productId: string;
+}
+
+export interface PaypalSandboxOrder {
+  /** @minLength 1 */
+  orderId: string;
+}
+
+export type PaypalSandboxCaptureStatus = typeof PaypalSandboxCaptureStatus[keyof typeof PaypalSandboxCaptureStatus];
+
+
+export const PaypalSandboxCaptureStatus = {
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export interface PaypalSandboxCapture {
+  status: PaypalSandboxCaptureStatus;
+  /** @minLength 1 */
+  captureId: string;
+  amount: string;
+  currency: string;
+}
+
 export interface Channel3Brand {
   id?: string;
   name?: string;

@@ -810,6 +810,16 @@
 .ai-explanation { margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line); }
 .ai-explanation > span { color: var(--green); font-size: 10px; font-weight: 600; }
 .ai-explanation p { margin: 5px 0 0; color: var(--ink); font-size: 12px; line-height: 1.5; }
+.paypal-checkout { margin-top: 15px; padding: 13px 14px; border: 1px solid var(--line); background: var(--card); }
+.paypal-action-label { display: block; color: var(--ink); font: 600 12px 'Manrope', sans-serif; }
+.paypal-checkout > p { margin: 4px 0 0; color: var(--muted-ink); font-size: 10px; }
+.paypal-checkout .paypal-demo-note { color: var(--muted-ink); }
+.paypal-button-slot { min-height: 44px; margin-top: 10px; }
+.paypal-button-slot paypal-button { display: block; min-height: 42px; }
+.paypal-message { margin-top: 8px; color: var(--muted-ink); font-size: 11px; }
+.paypal-confirmation { margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--line); }
+.paypal-confirmation strong { color: var(--green); font: 600 12px 'Manrope', sans-serif; }
+.paypal-confirmation p { margin: 4px 0 0; color: var(--muted-ink); font-size: 11px; }
 .state-panel { border-color: var(--line); }
 .state-panel h3 { font-family: 'Manrope', sans-serif; }
 .retry-button { color: var(--ink); font-family: var(--app-font-sans); }

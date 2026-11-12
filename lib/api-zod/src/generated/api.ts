@@ -123,3 +123,58 @@ export const GenerateRaeteExplanationResponse = zod.object({
 })
 
 
+/**
+ * @summary Get the public PayPal Sandbox client ID
+ */
+
+
+
+export const GetPaypalSandboxConfigResponse = zod.object({
+  "clientId": zod.string().min(1)
+})
+
+
+/**
+ * @summary Create a Sandbox demo order for a live Channel3 product
+ */
+export const createPaypalSandboxOrderBodyQueryMax = 200;
+
+export const createPaypalSandboxOrderBodyProductIdMax = 160;
+
+
+
+export const CreatePaypalSandboxOrderBody = zod.object({
+  "query": zod.string().min(1).max(createPaypalSandboxOrderBodyQueryMax),
+  "productId": zod.string().min(1).max(createPaypalSandboxOrderBodyProductIdMax)
+})
+
+
+
+
+export const CreatePaypalSandboxOrderResponse = zod.object({
+  "orderId": zod.string().min(1)
+})
+
+
+/**
+ * @summary Capture a PayPal Sandbox demo order after approval
+ */
+export const capturePaypalSandboxOrderPathOrderIdMax = 128;
+
+
+
+export const CapturePaypalSandboxOrderParams = zod.object({
+  "orderId": zod.coerce.string().min(1).max(capturePaypalSandboxOrderPathOrderIdMax)
+})
+
+
+
+
+export const CapturePaypalSandboxOrderResponse = zod.object({
+  "status": zod.enum(['COMPLETED']),
+  "captureId": zod.string().min(1),
+  "amount": zod.string(),
+  "currency": zod.string()
+})
+
+

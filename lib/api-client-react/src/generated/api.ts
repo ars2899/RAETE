@@ -23,6 +23,10 @@ import type {
   Channel3SearchResults,
   Error,
   HealthStatus,
+  PaypalSandboxCapture,
+  PaypalSandboxConfig,
+  PaypalSandboxOrder,
+  PaypalSandboxOrderInput,
   RaeteExplanation,
   RaeteExplanationInput,
   SearchChannel3ProductsParams
@@ -303,5 +307,244 @@ export const useGenerateRaeteExplanation = <TError = ErrorType<Error>,
         TContext
       > => {
       return useMutation(getGenerateRaeteExplanationMutationOptions(options));
+    }
+
+export const getGetPaypalSandboxConfigUrl = () => {
+
+
+
+
+  return `/api/paypal/config`
+}
+
+/**
+ * @summary Get the public PayPal Sandbox client ID
+ */
+export const getPaypalSandboxConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<PaypalSandboxConfig> => {
+
+  return customFetch<PaypalSandboxConfig>(getGetPaypalSandboxConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPaypalSandboxConfigQueryKey = () => {
+    return [
+    `/api/paypal/config`
+    ] as const;
+    }
+
+
+export const getGetPaypalSandboxConfigQueryOptions = <TData = Awaited<ReturnType<typeof getPaypalSandboxConfig>>, TError = ErrorType<Error>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPaypalSandboxConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPaypalSandboxConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPaypalSandboxConfig>>> = ({ signal }) => getPaypalSandboxConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPaypalSandboxConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPaypalSandboxConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getPaypalSandboxConfig>>>
+export type GetPaypalSandboxConfigQueryError = ErrorType<Error>
+
+
+/**
+ * @summary Get the public PayPal Sandbox client ID
+ */
+
+export function useGetPaypalSandboxConfig<TData = Awaited<ReturnType<typeof getPaypalSandboxConfig>>, TError = ErrorType<Error>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPaypalSandboxConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPaypalSandboxConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreatePaypalSandboxOrderUrl = () => {
+
+
+
+
+  return `/api/paypal/orders`
+}
+
+/**
+ * @summary Create a Sandbox demo order for a live Channel3 product
+ */
+export const createPaypalSandboxOrder = async (paypalSandboxOrderInput: PaypalSandboxOrderInput, options?: Parameters<typeof customFetch>[1]): Promise<PaypalSandboxOrder> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PaypalSandboxOrder>(getCreatePaypalSandboxOrderUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(paypalSandboxOrderInput)
+  }
+);}
+
+
+
+
+
+export const getCreatePaypalSandboxOrderMutationKey = () => ['createPaypalSandboxOrder'] as const;
+
+export const getCreatePaypalSandboxOrderMutationOptions = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPaypalSandboxOrder>>, TError,CreatePaypalSandboxOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPaypalSandboxOrder>>, TError,CreatePaypalSandboxOrderMutationVariables, TContext> => {
+
+const mutationKey = getCreatePaypalSandboxOrderMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPaypalSandboxOrder>>, CreatePaypalSandboxOrderMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPaypalSandboxOrder(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePaypalSandboxOrderMutationResult = NonNullable<Awaited<ReturnType<typeof createPaypalSandboxOrder>>>
+    export type CreatePaypalSandboxOrderMutationBody = BodyType<PaypalSandboxOrderInput>
+    export type CreatePaypalSandboxOrderMutationError = ErrorType<Error>
+    export type CreatePaypalSandboxOrderMutationVariables = {data: BodyType<PaypalSandboxOrderInput>}
+
+    /**
+ * @summary Create a Sandbox demo order for a live Channel3 product
+ */
+export const useCreatePaypalSandboxOrder = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPaypalSandboxOrder>>, TError,CreatePaypalSandboxOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPaypalSandboxOrder>>,
+        TError,
+        CreatePaypalSandboxOrderMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreatePaypalSandboxOrderMutationOptions(options));
+    }
+
+export const getCapturePaypalSandboxOrderUrl = (orderId: string,) => {
+
+
+
+
+  return `/api/paypal/orders/${orderId}/capture`
+}
+
+/**
+ * @summary Capture a PayPal Sandbox demo order after approval
+ */
+export const capturePaypalSandboxOrder = async (orderId: string, options?: Parameters<typeof customFetch>[1]): Promise<PaypalSandboxCapture> => {
+
+  return customFetch<PaypalSandboxCapture>(getCapturePaypalSandboxOrderUrl(orderId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCapturePaypalSandboxOrderMutationKey = () => ['capturePaypalSandboxOrder'] as const;
+
+export const getCapturePaypalSandboxOrderMutationOptions = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof capturePaypalSandboxOrder>>, TError,CapturePaypalSandboxOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof capturePaypalSandboxOrder>>, TError,CapturePaypalSandboxOrderMutationVariables, TContext> => {
+
+const mutationKey = getCapturePaypalSandboxOrderMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof capturePaypalSandboxOrder>>, CapturePaypalSandboxOrderMutationVariables> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  capturePaypalSandboxOrder(orderId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CapturePaypalSandboxOrderMutationResult = NonNullable<Awaited<ReturnType<typeof capturePaypalSandboxOrder>>>
+
+    export type CapturePaypalSandboxOrderMutationError = ErrorType<Error>
+    export type CapturePaypalSandboxOrderMutationVariables = {orderId: string}
+
+    /**
+ * @summary Capture a PayPal Sandbox demo order after approval
+ */
+export const useCapturePaypalSandboxOrder = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof capturePaypalSandboxOrder>>, TError,CapturePaypalSandboxOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof capturePaypalSandboxOrder>>,
+        TError,
+        CapturePaypalSandboxOrderMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCapturePaypalSandboxOrderMutationOptions(options));
     }
 

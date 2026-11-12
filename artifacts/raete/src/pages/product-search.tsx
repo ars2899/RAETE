@@ -39,6 +39,22 @@ type RankedProduct = {
   score: number;
   originalIndex: number;
 };
+type PaypalV6Session = {
+  start: (options: { presentationMode: 'auto' }, order: Promise<{ orderId: string }>) => Promise<void>;
+};
+type PaypalV6Instance = {
+  findEligibleMethods: () => Promise<{ isEligible: (method: string) => boolean }>;
+  createPayPalOneTimePaymentSession: (handlers: {
+    onApprove: (data: { orderId: string }) => Promise<void>;
+    onCancel: () => void;
+    onError: () => void;
+  }) => Promise<PaypalV6Session>;
+};
+declare global {
+  interface Window {
+    paypal?: { createInstance: (options: { clientId: string; components: string[] }) => Promise<PaypalV6Instance> };
+  }
+}
 
 const priorityOptions: { key: PriorityKey; label: string }[] = [
   { key: 'materials', label: 'Materials' },
@@ -103,6 +119,15 @@ function formatPrice(offer?: Channel3Offer) {
   } catch {
     return `${currency} ${amount}`;
   }
+}
+
+function isPayPalAmountSafe(offer?: Channel3Offer) {
+  const amount = getOfferAmount(offer);
+  const currency = offer?.price?.currency?.toUpperCase();
+  const supported = ['AUD','BRL','CAD','CNY','CZK','DKK','EUR','GBP','HKD','HUF','ILS','JPY','MXN','MYR','NOK','NZD','PHP','PLN','RUB','SEK','SGD','THB','TWD','USD','CHF'];
+  if (amount === undefined || amount <= 0 || !currency || !supported.includes(currency)) return false;
+  if (currency === 'JPY' || currency === 'HUF') return Number.isInteger(amount);
+  return Math.round(amount * 100) === amount * 100;
 }
 
 export function hasAllPriorities(priorities: Priorities): priorities is SelectedPriorities {
@@ -466,6 +491,8 @@ export default function ProductSearch() {
   const [prototypeOpen, setPrototypeOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [aiExplanation, setAiExplanation] = useState('');
+  const [paypalStatus, setPaypalStatus] = useState<'idle' | 'loading' | 'ready' | 'processing' | 'complete' | 'cancelled' | 'error'>('idle');
+  const paypalMountRef = useRef<HTMLDivElement>(null);
   const aiRequestId = useRef(0);
   const explanationMutation = useGenerateRaeteExplanation();
   const generateExplanationRef = useRef(explanationMutation.mutateAsync);
@@ -540,6 +567,79 @@ export default function ProductSearch() {
       aiRequestId.current += 1;
     };
   }, [rankingActive, explanationInput]);
+
+  useEffect(() => {
+    const currentProduct = top?.product;
+    if (!rankingActive || !currentProduct || !isPayPalAmountSafe(getOffer(currentProduct))) {
+      setPaypalStatus('idle');
+      paypalMountRef.current?.replaceChildren();
+      return;
+    }
+    let cancelled = false;
+    setPaypalStatus('loading');
+
+    async function initializePayPal() {
+      try {
+        const configResponse = await fetch('/api/paypal/config');
+        if (!configResponse.ok) throw new Error('PayPal Sandbox is not configured.');
+        const { clientId } = await configResponse.json() as { clientId: string };
+        if (!window.paypal) {
+          await new Promise<void>((resolve, reject) => {
+            const existing = document.getElementById('paypal-v6-sdk') as HTMLScriptElement | null;
+            const script = existing ?? document.createElement('script');
+            script.src = 'https://www.sandbox.paypal.com/web-sdk/v6/core';
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('PayPal Sandbox SDK could not load.'));
+            if (!existing) {
+              script.id = 'paypal-v6-sdk';
+              document.head.appendChild(script);
+            }
+          });
+        }
+        if (cancelled || !window.paypal) return;
+        const sdk = await window.paypal.createInstance({ clientId, components: ['paypal-payments'] });
+        const eligibility = await sdk.findEligibleMethods();
+        if (!eligibility.isEligible('paypal')) throw new Error('PayPal is not eligible in this Sandbox session.');
+        const session = await sdk.createPayPalOneTimePaymentSession({
+          onApprove: async ({ orderId }) => {
+            const response = await fetch(`/api/paypal/orders/${encodeURIComponent(orderId)}/capture`, { method: 'POST' });
+            if (!response.ok) throw new Error('PayPal Sandbox capture failed.');
+            const capture = await response.json() as { status: string };
+            if (capture.status !== 'COMPLETED') throw new Error('PayPal Sandbox capture was not completed.');
+            setPaypalStatus('complete');
+          },
+          onCancel: () => setPaypalStatus('cancelled'),
+          onError: () => setPaypalStatus('error'),
+        });
+        if (cancelled || !paypalMountRef.current) return;
+        const button = document.createElement('paypal-button');
+        button.setAttribute('aria-label', 'Pay with PayPal Sandbox');
+        button.addEventListener('click', () => {
+          setPaypalStatus('processing');
+          const order = fetch('/api/paypal/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: submittedQuery, productId: currentProduct.id }),
+          }).then(async (response) => {
+            if (!response.ok) throw new Error('PayPal Sandbox could not create the order.');
+            return await response.json() as { orderId: string };
+          });
+          void session.start({ presentationMode: 'auto' }, order).catch(() => setPaypalStatus('error'));
+        });
+        paypalMountRef.current.replaceChildren(button);
+        setPaypalStatus('ready');
+      } catch {
+        if (!cancelled) setPaypalStatus('error');
+      }
+    }
+
+    void initializePayPal();
+    return () => {
+      cancelled = true;
+      paypalMountRef.current?.replaceChildren();
+    };
+  }, [rankingActive, top?.product.id, submittedQuery]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -691,6 +791,24 @@ export default function ProductSearch() {
                     <span>AI explanation</span>
                     <p>{aiStatus === 'ready' ? aiExplanation : aiStatus === 'error' ? 'AI explanation unavailable' : aiStatus === 'loading' ? 'Generating explanation…' : ''}</p>
                   </div>
+                  <section className="paypal-checkout" aria-label="PayPal Sandbox demo checkout">
+                    <span className="paypal-action-label">Pay with PayPal Sandbox</span>
+                    <p>Sandbox · no real payment</p>
+                    <p className="paypal-demo-note">Demo transaction only; the Channel3 retailer is not paid.</p>
+                    {isPayPalAmountSafe(getOffer(top.product))
+                      ? <div className="paypal-button-slot" ref={paypalMountRef} aria-label="Pay with PayPal Sandbox" />
+                      : <p className="paypal-message">PayPal Sandbox is unavailable because this product has no safe supported live price and currency.</p>}
+                    {paypalStatus === 'loading' && <p className="paypal-message">Loading PayPal Sandbox…</p>}
+                    {paypalStatus === 'processing' && <p className="paypal-message">Waiting for Sandbox approval…</p>}
+                    {paypalStatus === 'cancelled' && <p className="paypal-message">Sandbox checkout cancelled.</p>}
+                    {paypalStatus === 'error' && <p className="paypal-message">PayPal Sandbox checkout could not be completed. The ranking is unchanged.</p>}
+                    {paypalStatus === 'complete' && (
+                      <div className="paypal-confirmation" role="status" data-testid="paypal-success">
+                        <strong>Sandbox checkout complete</strong>
+                        <p>No real payment was made.</p>
+                      </div>
+                    )}
+                  </section>
                   <button
                     type="button"
                     className="see-why-button"
