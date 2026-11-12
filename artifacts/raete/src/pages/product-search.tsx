@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import {
   getSearchChannel3ProductsQueryKey,
+  useGenerateRaeteExplanation,
   useSearchChannel3Products,
 } from '@workspace/api-client-react';
 import type { Channel3Offer, Channel3Product } from '@workspace/api-client-react';
@@ -463,6 +464,12 @@ export default function ProductSearch() {
   const [expandedWhy, setExpandedWhy] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [prototypeOpen, setPrototypeOpen] = useState(false);
+  const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [aiExplanation, setAiExplanation] = useState('');
+  const aiRequestId = useRef(0);
+  const explanationMutation = useGenerateRaeteExplanation();
+  const generateExplanationRef = useRef(explanationMutation.mutateAsync);
+  generateExplanationRef.current = explanationMutation.mutateAsync;
   const query = useSearchChannel3Products(
     { query: submittedQuery || ' ' },
     {
@@ -474,7 +481,7 @@ export default function ProductSearch() {
     },
   );
 
-  const products = query.data?.products?.slice(0, 8) ?? [];
+  const products = useMemo(() => query.data?.products?.slice(0, 8) ?? [], [query.data?.products]);
   const rankingActive = hasAllPriorities(priorities);
   const prices = useMemo(() => getPriceScores(products), [products]);
   const rankedProducts = useMemo(
@@ -484,6 +491,55 @@ export default function ProductSearch() {
   const top = rankedProducts[0];
   const second = rankedProducts[1];
   const closeCall = !!top && !!second && top.score - second.score < 5;
+  const explanationInput = useMemo(() => {
+    if (!top) return null;
+    const offer = getOffer(top.product);
+    return {
+      productName: top.product.title,
+      brand: top.product.brands?.find((item) => item.name)?.name ?? null,
+      productFacts: {
+        price: formatPrice(offer) ?? null,
+        merchant: offer?.domain ?? null,
+        condition: offer?.condition ?? null,
+        availability: offer?.availability ?? null,
+      },
+      priorities: priorities as SelectedPriorities,
+      dimensions: top.dimensions.map((dimension) => ({
+        name: dimension.label as 'Materials' | 'Quality' | 'Price' | 'Longevity',
+        priority: dimension.level,
+        score: dimension.score,
+        weight: dimension.weight,
+        provenance: dimension.source,
+      })),
+      aheadOfSecond: second ? getTradeoffText(top, second) : null,
+    };
+  }, [top, second, priorities]);
+
+  useEffect(() => {
+    const requestId = ++aiRequestId.current;
+    if (!rankingActive || !explanationInput) {
+      setAiStatus('idle');
+      setAiExplanation('');
+      return;
+    }
+
+    setAiStatus('loading');
+    setAiExplanation('');
+    void generateExplanationRef.current({ data: explanationInput }).then(
+      (result) => {
+        if (aiRequestId.current !== requestId) return;
+        setAiExplanation(result.explanation);
+        setAiStatus('ready');
+      },
+      () => {
+        if (aiRequestId.current !== requestId) return;
+        setAiStatus('error');
+      },
+    );
+    return () => {
+      aiRequestId.current += 1;
+    };
+  }, [rankingActive, explanationInput]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -631,6 +687,10 @@ export default function ProductSearch() {
                       <div><span>AHEAD OF #2 BECAUSE…</span><p>{closeCall ? getTradeoffText(top, second) : getWinnerReason(top, second)}</p></div>
                     </div>
                   )}
+                  <div className="ai-explanation" data-testid="panel-ai-explanation" aria-live="polite">
+                    <span>AI explanation</span>
+                    <p>{aiStatus === 'ready' ? aiExplanation : aiStatus === 'error' ? 'AI explanation unavailable' : aiStatus === 'loading' ? 'Generating explanation…' : ''}</p>
+                  </div>
                   <button
                     type="button"
                     className="see-why-button"

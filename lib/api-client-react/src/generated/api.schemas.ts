@@ -13,6 +13,149 @@ export interface Error {
   error: string;
 }
 
+export interface RaeteProductFacts {
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  price?: string | null;
+  /**
+     * @maxLength 160
+     * @nullable
+     */
+  merchant?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  condition?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  availability?: string | null;
+}
+
+export type RaetePrioritiesMaterials = typeof RaetePrioritiesMaterials[keyof typeof RaetePrioritiesMaterials];
+
+
+export const RaetePrioritiesMaterials = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type RaetePrioritiesQuality = typeof RaetePrioritiesQuality[keyof typeof RaetePrioritiesQuality];
+
+
+export const RaetePrioritiesQuality = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type RaetePrioritiesPrice = typeof RaetePrioritiesPrice[keyof typeof RaetePrioritiesPrice];
+
+
+export const RaetePrioritiesPrice = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type RaetePrioritiesLongevity = typeof RaetePrioritiesLongevity[keyof typeof RaetePrioritiesLongevity];
+
+
+export const RaetePrioritiesLongevity = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export interface RaetePriorities {
+  materials: RaetePrioritiesMaterials;
+  quality: RaetePrioritiesQuality;
+  price: RaetePrioritiesPrice;
+  longevity: RaetePrioritiesLongevity;
+}
+
+export type RaeteDimensionName = typeof RaeteDimensionName[keyof typeof RaeteDimensionName];
+
+
+export const RaeteDimensionName = {
+  Materials: 'Materials',
+  Quality: 'Quality',
+  Price: 'Price',
+  Longevity: 'Longevity',
+} as const;
+
+export type RaeteDimensionPriority = typeof RaeteDimensionPriority[keyof typeof RaeteDimensionPriority];
+
+
+export const RaeteDimensionPriority = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type RaeteDimensionProvenance = typeof RaeteDimensionProvenance[keyof typeof RaeteDimensionProvenance];
+
+
+export const RaeteDimensionProvenance = {
+  prototype: 'prototype',
+  channel3: 'channel3',
+} as const;
+
+export interface RaeteDimension {
+  name: RaeteDimensionName;
+  priority: RaeteDimensionPriority;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  score: number | null;
+  /**
+     * @minimum 1
+     * @maximum 3
+     */
+  weight: number;
+  provenance: RaeteDimensionProvenance;
+}
+
+export interface RaeteExplanationInput {
+  /**
+     * @minLength 1
+     * @maxLength 250
+     */
+  productName: string;
+  /**
+     * @maxLength 160
+     * @nullable
+     */
+  brand?: string | null;
+  productFacts: RaeteProductFacts;
+  priorities: RaetePriorities;
+  /**
+     * @minItems 4
+     * @maxItems 4
+     */
+  dimensions: RaeteDimension[];
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  aheadOfSecond?: string | null;
+}
+
+export interface RaeteExplanation {
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  explanation: string;
+}
+
 export interface Channel3Brand {
   id?: string;
   name?: string;

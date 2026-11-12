@@ -62,3 +62,64 @@ export const SearchChannel3ProductsResponse = zod.object({
 })
 
 
+/**
+ * @summary Explain a deterministic RAETE ranking
+ */
+export const generateRaeteExplanationBodyProductNameMax = 250;
+
+export const generateRaeteExplanationBodyBrandMax = 160;
+
+export const generateRaeteExplanationBodyProductFactsPriceMax = 80;
+
+export const generateRaeteExplanationBodyProductFactsMerchantMax = 160;
+
+export const generateRaeteExplanationBodyProductFactsConditionMax = 120;
+
+export const generateRaeteExplanationBodyProductFactsAvailabilityMax = 120;
+
+export const generateRaeteExplanationBodyDimensionsItemScoreMin = 0;
+export const generateRaeteExplanationBodyDimensionsItemScoreMax = 100;
+
+export const generateRaeteExplanationBodyDimensionsItemWeightMax = 3;
+
+export const generateRaeteExplanationBodyDimensionsMin = 4;
+export const generateRaeteExplanationBodyDimensionsMax = 4;
+
+export const generateRaeteExplanationBodyAheadOfSecondMax = 500;
+
+
+
+export const GenerateRaeteExplanationBody = zod.object({
+  "productName": zod.string().min(1).max(generateRaeteExplanationBodyProductNameMax),
+  "brand": zod.string().max(generateRaeteExplanationBodyBrandMax).nullish(),
+  "productFacts": zod.object({
+  "price": zod.string().max(generateRaeteExplanationBodyProductFactsPriceMax).nullish(),
+  "merchant": zod.string().max(generateRaeteExplanationBodyProductFactsMerchantMax).nullish(),
+  "condition": zod.string().max(generateRaeteExplanationBodyProductFactsConditionMax).nullish(),
+  "availability": zod.string().max(generateRaeteExplanationBodyProductFactsAvailabilityMax).nullish()
+}),
+  "priorities": zod.object({
+  "materials": zod.enum(['low', 'medium', 'high']),
+  "quality": zod.enum(['low', 'medium', 'high']),
+  "price": zod.enum(['low', 'medium', 'high']),
+  "longevity": zod.enum(['low', 'medium', 'high'])
+}),
+  "dimensions": zod.array(zod.object({
+  "name": zod.enum(['Materials', 'Quality', 'Price', 'Longevity']),
+  "priority": zod.enum(['low', 'medium', 'high']),
+  "score": zod.number().min(generateRaeteExplanationBodyDimensionsItemScoreMin).max(generateRaeteExplanationBodyDimensionsItemScoreMax).nullable(),
+  "weight": zod.number().int().min(1).max(generateRaeteExplanationBodyDimensionsItemWeightMax),
+  "provenance": zod.enum(['prototype', 'channel3'])
+})).min(generateRaeteExplanationBodyDimensionsMin).max(generateRaeteExplanationBodyDimensionsMax),
+  "aheadOfSecond": zod.string().max(generateRaeteExplanationBodyAheadOfSecondMax).nullish()
+})
+
+export const generateRaeteExplanationResponseExplanationMax = 500;
+
+
+
+export const GenerateRaeteExplanationResponse = zod.object({
+  "explanation": zod.string().min(1).max(generateRaeteExplanationResponseExplanationMax)
+})
+
+

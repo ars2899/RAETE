@@ -807,6 +807,9 @@
 .ranked-after-close-call { padding-top: 20px; }
 .show-more-products { gap: 7px; margin: 22px auto 0; padding: 10px 14px; border-color: var(--line); background: var(--card); color: var(--ink); font: 600 11px var(--app-font-sans); }
 .show-more-products span { margin-left: 4px; color: var(--muted-ink); font: 400 11px var(--app-font-sans); }
+.ai-explanation { margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line); }
+.ai-explanation > span { color: var(--green); font-size: 10px; font-weight: 600; }
+.ai-explanation p { margin: 5px 0 0; color: var(--ink); font-size: 12px; line-height: 1.5; }
 .state-panel { border-color: var(--line); }
 .state-panel h3 { font-family: 'Manrope', sans-serif; }
 .retry-button { color: var(--ink); font-family: var(--app-font-sans); }

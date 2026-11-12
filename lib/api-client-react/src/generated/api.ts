@@ -6,11 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -19,11 +23,13 @@ import type {
   Channel3SearchResults,
   Error,
   HealthStatus,
+  RaeteExplanation,
+  RaeteExplanationInput,
   SearchChannel3ProductsParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
-import type { ErrorType } from '../custom-fetch';
+import type { ErrorType , BodyType } from '../custom-fetch';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -210,4 +216,92 @@ export function useSearchChannel3Products<TData = Awaited<ReturnType<typeof sear
 
 
 
+
+export const getGenerateRaeteExplanationUrl = () => {
+
+
+
+
+  return `/api/raete/explanation`
+}
+
+/**
+ * @summary Explain a deterministic RAETE ranking
+ */
+export const generateRaeteExplanation = async (raeteExplanationInput: RaeteExplanationInput, options?: Parameters<typeof customFetch>[1]): Promise<RaeteExplanation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RaeteExplanation>(getGenerateRaeteExplanationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(raeteExplanationInput)
+  }
+);}
+
+
+
+
+
+export const getGenerateRaeteExplanationMutationKey = () => ['generateRaeteExplanation'] as const;
+
+export const getGenerateRaeteExplanationMutationOptions = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateRaeteExplanation>>, TError,GenerateRaeteExplanationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateRaeteExplanation>>, TError,GenerateRaeteExplanationMutationVariables, TContext> => {
+
+const mutationKey = getGenerateRaeteExplanationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateRaeteExplanation>>, GenerateRaeteExplanationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  generateRaeteExplanation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateRaeteExplanationMutationResult = NonNullable<Awaited<ReturnType<typeof generateRaeteExplanation>>>
+    export type GenerateRaeteExplanationMutationBody = BodyType<RaeteExplanationInput>
+    export type GenerateRaeteExplanationMutationError = ErrorType<Error>
+    export type GenerateRaeteExplanationMutationVariables = {data: BodyType<RaeteExplanationInput>}
+
+    /**
+ * @summary Explain a deterministic RAETE ranking
+ */
+export const useGenerateRaeteExplanation = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateRaeteExplanation>>, TError,GenerateRaeteExplanationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateRaeteExplanation>>,
+        TError,
+        GenerateRaeteExplanationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGenerateRaeteExplanationMutationOptions(options));
+    }
 
