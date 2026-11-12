@@ -177,8 +177,8 @@ export function RaeteV0() {
 
     <section className={`rv-search-intro${state !== 'initial' ? ' rv-search-compact' : ''}`}>
       <div className="rv-search-copy">
-        <h1>{state === 'initial' ? 'Find the piece that fits you.' : 'A better way to find your piece.'}</h1>
-        <p>{state === 'initial' ? 'Search real products, then decide by what matters to you.' : 'Search across retailers, then make the order your own.'}</p>
+        <h1>{state === 'initial' ? 'Which one wins for you?' : 'A better way to find your piece.'}</h1>
+        <p>{state === 'initial' ? 'Search once. Set what matters. See which product comes out ahead, and why.' : 'Search across retailers, then make the order your own.'}</p>
       </div>
       <form className="rv-search-form" onSubmit={submitSearch}>
         <Search size={18} strokeWidth={1.8} aria-hidden="true" />
@@ -186,7 +186,7 @@ export function RaeteV0() {
         <button type="submit">Search <ArrowUpRight size={16} /></button>
       </form>
       {state === 'initial' && <button className="rv-example" type="button" onClick={() => { setQuery('black mini skirt'); submitSearch(); }}>
-        <span>Try this search</span><strong>Try black mini skirt</strong><ArrowUpRight size={14} />
+        <span>Try “black mini skirt”</span><ArrowUpRight size={14} />
       </button>}
     </section>
 
@@ -272,7 +272,6 @@ export function RaeteV0() {
         </div>
       </section>}
     </section>}
-    <footer className="rv-footer"><span>RAETE <i>/</i> A WINDOW INTO WHAT’S AVAILABLE</span><span>PRODUCTS, ONE SEARCH AWAY</span></footer>
   </main>;
 }
 

@@ -73,14 +73,13 @@
 .rv-search-form input::placeholder { color: #979890; }
 .rv-search-form button {
   height: 42px; display: flex; align-items: center; gap: 12px; padding: 0 16px;
-  background: var(--rv-ink); color: #fffefa; border: 0; font: 600 12px 'DM Sans', sans-serif; cursor: pointer;
+  background: var(--rv-accent); color: #fffefa; border: 0; font: 600 12px 'DM Sans', sans-serif; cursor: pointer;
 }
 .rv-example {
   grid-column: 2; justify-self: start; display: flex; align-items: center; gap: 9px; margin-top: 13px;
   padding: 0; border: 0; background: transparent; color: var(--rv-ink); cursor: pointer;
 }
-.rv-example span { color: var(--rv-muted); font-size: 11px; }
-.rv-example strong { font: 600 11px 'DM Sans', sans-serif; text-decoration: underline; text-underline-offset: 3px; }
+.rv-example span { color: var(--rv-accent); font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
 .rv-example svg { color: var(--rv-accent); }
 .rv-search-compact { padding-top: 28px; grid-template-columns: 1fr minmax(390px, 48%); }
 .rv-search-compact .rv-search-copy h1 { font-size: 25px; }
@@ -182,8 +181,6 @@
 .rv-close-item .rv-why-copy { grid-column: 2; color: var(--rv-muted); font-size: 11px; line-height: 1.5; }
 .rv-close-item .rv-see-why { grid-column: 2; justify-self: start; }
 .rv-close-item .rv-breakdown { grid-column: 1 / -1; width: 100%; }
-.rv-footer { min-height: 54px; margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--rv-line); color: var(--rv-muted); font-size: 8px; letter-spacing: .1em; }
-.rv-footer i { padding: 0 4px; color: var(--rv-accent); font-style: normal; }
 @keyframes rv-arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 760px) {
@@ -247,5 +244,4 @@
   .rv-close-item .rv-product-details { padding: 0; }
   .rv-close-item .rv-title { white-space: normal; }
   .rv-close-item .rv-why-copy { font-size: 10px; }
-  .rv-footer { align-items: flex-start; justify-content: center; flex-direction: column; gap: 5px; padding: 12px 0; font-size: 7px; }
 }
