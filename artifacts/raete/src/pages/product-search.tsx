@@ -237,6 +237,11 @@ export function rankProducts(
 
 function getLeadingDimension(top: RankedProduct, second?: RankedProduct) {
   if (!second) return undefined;
+  const priorityRank: Record<SelectedPriority, number> = {
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
   return top.dimensions
     .map((dimension) => {
       const other = second.dimensions.find((item) => item.key === dimension.key);
@@ -251,7 +256,12 @@ function getLeadingDimension(top: RankedProduct, second?: RankedProduct) {
       };
     })
     .filter((dimension) => dimension.delta > 0)
-    .sort((a, b) => b.weightedDelta - a.weightedDelta || b.delta - a.delta)[0];
+    .sort(
+      (a, b) =>
+        priorityRank[b.level] - priorityRank[a.level] ||
+        b.weightedDelta - a.weightedDelta ||
+        b.delta - a.delta,
+    )[0];
 }
 
 export function getTradeoffText(top: RankedProduct, second: RankedProduct) {
