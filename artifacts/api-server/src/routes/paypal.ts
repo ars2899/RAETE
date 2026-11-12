@@ -17,6 +17,23 @@ const supportedCurrencies = new Set([
   "SGD", "THB", "TWD", "USD", "CHF",
 ]);
 const zeroDecimalCurrencies = new Set(["HUF", "JPY"]);
+type SandboxTestState = {
+  orderId: string;
+  status: string;
+  captureId?: string;
+  updatedAt: string;
+};
+let latestSandboxTest: SandboxTestState | null = null;
+
+function updateSandboxTest(update: Partial<SandboxTestState> & Pick<SandboxTestState, "orderId">) {
+  const previous = latestSandboxTest?.orderId === update.orderId ? latestSandboxTest : undefined;
+  latestSandboxTest = {
+    orderId: update.orderId,
+    status: update.status ?? previous?.status ?? "CREATED",
+    captureId: update.captureId ?? previous?.captureId,
+    updatedAt: new Date().toISOString(),
+  };
+}
 
 function paypalCredentials() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
@@ -70,6 +87,11 @@ router.get("/paypal/config", (_req, res): void => {
   res.json({ clientId });
 });
 
+// Temporary Sandbox-only observability; state resets when the API process restarts.
+router.get("/paypal/sandbox-test-status", (_req, res): void => {
+  res.json({ latest: latestSandboxTest });
+});
+
 router.post("/paypal/orders", async (req, res): Promise<void> => {
   const parsed = CreatePaypalSandboxOrderBody.safeParse(req.body);
   if (!parsed.success) {
@@ -118,15 +140,17 @@ router.post("/paypal/orders", async (req, res): Promise<void> => {
       }),
       signal: AbortSignal.timeout(15_000),
     });
-    const order = await orderResponse.json() as { id?: string; message?: string };
+    const order = await orderResponse.json() as { id?: string; status?: string };
     if (!orderResponse.ok || !order.id) {
       req.log.warn({ statusCode: orderResponse.status }, "PayPal Sandbox order creation failed");
       res.status(502).json({ error: "PayPal Sandbox could not create the order." });
       return;
     }
+    updateSandboxTest({ orderId: order.id, status: order.status ?? "CREATED" });
+    req.log.info({ orderId: order.id, paypalStatus: order.status ?? "CREATED" }, "PayPal Sandbox order created");
     res.json(CreatePaypalSandboxOrderResponse.parse({ orderId: order.id }));
   } catch (error) {
-    req.log.warn({ err: error }, "PayPal Sandbox order creation failed");
+    req.log.warn("PayPal Sandbox order creation failed");
     res.status(502).json({ error: "PayPal Sandbox checkout is unavailable." });
   }
 });
@@ -151,6 +175,11 @@ router.post("/paypal/orders/:orderId/capture", async (req, res): Promise<void> =
       res.status(400).json({ error: "This is not a RAETE Sandbox demo order." });
       return;
     }
+    if (order.status === "APPROVED") {
+      updateSandboxTest({ orderId: params.data.orderId, status: "APPROVED" });
+      req.log.info({ orderId: params.data.orderId }, "PayPal Sandbox approval returned");
+    }
+    updateSandboxTest({ orderId: params.data.orderId, status: "CAPTURE_ATTEMPTED" });
     const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${encodeURIComponent(params.data.orderId)}/capture`, {
       method: "POST",
       headers: {
@@ -162,16 +191,22 @@ router.post("/paypal/orders/:orderId/capture", async (req, res): Promise<void> =
       signal: AbortSignal.timeout(15_000),
     });
     const captured = await captureResponse.json() as {
+      status?: string;
       purchase_units?: Array<{
         payments?: { captures?: Array<{ id?: string; status?: string; amount?: { value?: string; currency_code?: string } }> };
       }>;
     };
     const capture = captured.purchase_units?.[0]?.payments?.captures?.[0];
+    const finalStatus = capture?.status ?? captured.status ?? `HTTP_${captureResponse.status}`;
+    req.log.info({ orderId: params.data.orderId, paypalStatus: finalStatus }, "PayPal Sandbox capture result");
     if (!captureResponse.ok || capture?.status !== "COMPLETED" || !capture.id || !capture.amount?.value || !capture.amount.currency_code) {
-      req.log.warn({ statusCode: captureResponse.status }, "PayPal Sandbox capture did not complete");
+      updateSandboxTest({ orderId: params.data.orderId, status: finalStatus });
+      req.log.warn({ orderId: params.data.orderId, paypalStatus: finalStatus }, "PayPal Sandbox capture did not complete");
       res.status(502).json({ error: "PayPal Sandbox could not confirm the capture." });
       return;
     }
+    updateSandboxTest({ orderId: params.data.orderId, status: "COMPLETED", captureId: capture.id });
+    req.log.info({ orderId: params.data.orderId, captureId: capture.id, paypalStatus: "COMPLETED" }, "PayPal Sandbox capture completed");
     res.json(CapturePaypalSandboxOrderResponse.parse({
       status: "COMPLETED",
       captureId: capture.id,
@@ -179,7 +214,8 @@ router.post("/paypal/orders/:orderId/capture", async (req, res): Promise<void> =
       currency: capture.amount.currency_code,
     }));
   } catch (error) {
-    req.log.warn({ err: error }, "PayPal Sandbox capture failed");
+    updateSandboxTest({ orderId: params.data.orderId, status: "CAPTURE_ERROR" });
+    req.log.warn({ orderId: params.data.orderId, paypalStatus: "CAPTURE_ERROR" }, "PayPal Sandbox capture failed");
     res.status(502).json({ error: "PayPal Sandbox capture is unavailable." });
   }
 });
