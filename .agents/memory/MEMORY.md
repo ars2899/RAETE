@@ -1,1 +1,1 @@
-- [Ranking integrity](ranking-integrity.md) — never force different preset winners; explanations must reflect priorities and weighted advantages.
+- [Ranking integrity and demo](ranking-integrity.md) — never force preset winners; red leather shoulder bag is the canonical final demo query.

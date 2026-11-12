@@ -180,6 +180,7 @@ router.post("/paypal/orders/:orderId/capture", async (req, res): Promise<void> =
       req.log.info({ orderId: params.data.orderId }, "PayPal Sandbox approval returned");
     }
     updateSandboxTest({ orderId: params.data.orderId, status: "CAPTURE_ATTEMPTED" });
+    req.log.info({ orderId: params.data.orderId, paypalStatus: "CAPTURE_ATTEMPTED" }, "PayPal Sandbox capture attempted");
     const captureResponse = await fetch(`${paypalApi}/v2/checkout/orders/${encodeURIComponent(params.data.orderId)}/capture`, {
       method: "POST",
       headers: {
