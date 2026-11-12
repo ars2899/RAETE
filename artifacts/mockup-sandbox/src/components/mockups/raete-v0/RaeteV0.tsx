@@ -82,7 +82,7 @@ export function RaeteV0() {
   const queryState = new URLSearchParams(window.location.search).get('state');
   const initialState = queryState === 'unranked' || queryState === 'ranked' ? queryState : 'initial';
   const [state, setState] = useState<'initial' | 'unranked' | 'ranked'>(initialState);
-  const [query, setQuery] = useState('black mini skirt');
+  const [query, setQuery] = useState(initialState === 'initial' ? '' : 'black mini skirt');
   const [preferences, setPreferences] = useState<Preferences>(initialState === 'ranked' ? {
     materials: 'High', quality: 'Medium', price: 'Low', longevity: 'Medium',
   } : emptyPreferences);
@@ -177,8 +177,8 @@ export function RaeteV0() {
 
     <section className={`rv-search-intro${state !== 'initial' ? ' rv-search-compact' : ''}`}>
       <div className="rv-search-copy">
-        <h1>{state === 'initial' ? 'Find something worth keeping.' : 'A better way to find your piece.'}</h1>
-        <p>{state === 'initial' ? 'Search the open web for the pieces you have in mind.' : 'Search across retailers, then make the order your own.'}</p>
+        <h1>{state === 'initial' ? 'Find the piece that fits you.' : 'A better way to find your piece.'}</h1>
+        <p>{state === 'initial' ? 'Search real products, then decide by what matters to you.' : 'Search across retailers, then make the order your own.'}</p>
       </div>
       <form className="rv-search-form" onSubmit={submitSearch}>
         <Search size={18} strokeWidth={1.8} aria-hidden="true" />
@@ -193,7 +193,7 @@ export function RaeteV0() {
     {state !== 'initial' && <section className="rv-results">
       <div className="rv-results-heading">
         <div><span className="rv-kicker">YOUR SEARCH</span><h2>{query || 'black mini skirt'}</h2></div>
-        <span className="rv-result-count">8 pieces <span>·</span> Open retail</span>
+        <span className="rv-result-count">8 products</span>
       </div>
 
       <section className="rv-preferences" aria-label="Preset priorities and ranking preferences">
@@ -266,7 +266,7 @@ export function RaeteV0() {
           {!showAll && <button className="rv-show-more" type="button" onClick={() => setShowAll(true)}>Show more <ChevronDown size={15} /><span>4 more pieces</span></button>}
         </>}
       </section> : <section className="rv-unranked" aria-label="Unranked product results">
-        <div className="rv-unranked-heading"><span>THE OPEN CATALOG</span><p>These results are not ranked yet.</p></div>
+        <div className="rv-unranked-heading"><span>PRODUCTS FOUND</span><p>These results are not ranked yet.</p></div>
         <div className="rv-product-grid">
           {products.map((product) => <article className="rv-product-card" key={product.id}><ProductImage product={product} /><Details product={product} /></article>)}
         </div>
