@@ -136,7 +136,8 @@
 .rv-unranked { padding-bottom: 42px; }
 .rv-ranked { padding-bottom: 45px; }
 .rv-ranked-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.rv-ranked-label > span:last-child { color: var(--rv-muted); font-size: 10px; }
+.rv-ranked-label > span + span { color: var(--rv-muted); font-size: 10px; }
+.rv-ranked-copy { text-transform: none; }
 .rv-featured { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(300px, .88fr); gap: clamp(25px, 4vw, 55px); padding-bottom: 24px; border-bottom: 1px solid var(--rv-line); }
 .rv-image-large { aspect-ratio: 1.12 / 1; }
 .rv-feature-copy { align-self: center; }
@@ -221,7 +222,7 @@
   .rv-price-line { align-items: flex-start; flex-direction: column; gap: 3px; margin-top: 5px; }
   .rv-price-line a { font-size: 8px; }
   .rv-ranked-label { margin-bottom: 9px; }
-  .rv-ranked-label > span:last-child { max-width: 120px; text-align: right; font-size: 9px; }
+  .rv-ranked-label > span + span { max-width: 120px; text-align: right; font-size: 9px; }
   .rv-featured { grid-template-columns: 1fr; gap: 14px; padding-bottom: 19px; }
   .rv-image-large { aspect-ratio: 1 / 1.02; }
   .rv-feature-copy { align-self: auto; }

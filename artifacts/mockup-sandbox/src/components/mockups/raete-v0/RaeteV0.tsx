@@ -27,9 +27,9 @@ const dimensions: { key: Dimension; label: string }[] = [
   { key: 'price', label: 'Price' }, { key: 'longevity', label: 'Longevity' },
 ];
 const presets: { name: string; values: [Level, Level, Level, Level]; note: string }[] = [
-  { name: 'Materials First', values: ['High', 'Medium', 'Low', 'Medium'], note: 'Materials lead the decision' },
-  { name: 'Keep It Forever', values: ['Medium', 'High', 'Low', 'High'], note: 'Built for the long haul' },
-  { name: 'Price Conscious', values: ['Low', 'Medium', 'High', 'Low'], note: 'Let price carry more weight' },
+  { name: 'Materials First', values: ['High', 'Medium', 'Low', 'Medium'], note: "What it's made of comes first." },
+  { name: 'Keep It Forever', values: ['Medium', 'High', 'Low', 'High'], note: 'Quality and longevity come first.' },
+  { name: 'Price Conscious', values: ['Low', 'Medium', 'High', 'Low'], note: 'Price comes first.' },
 ];
 const emptyPreferences: Preferences = { materials: '', quality: '', price: '', longevity: '' };
 const weight = (value: Level) => value === 'High' ? 3 : value === 'Medium' ? 2 : 1;
@@ -178,7 +178,7 @@ export function RaeteV0() {
     <section className={`rv-search-intro${state !== 'initial' ? ' rv-search-compact' : ''}`}>
       <div className="rv-search-copy">
         <h1>{state === 'initial' ? 'Which one wins for you?' : 'A better way to find your piece.'}</h1>
-        <p>{state === 'initial' ? 'Search once. Set what matters. See which product comes out ahead, and why.' : 'Search across retailers, then make the order your own.'}</p>
+        <p>{state === 'initial' ? 'Set what matters. See which one comes out ahead, and why.' : 'Search across retailers, then make the order your own.'}</p>
       </div>
       <form className="rv-search-form" onSubmit={submitSearch}>
         <Search size={18} strokeWidth={1.8} aria-hidden="true" />
@@ -192,14 +192,13 @@ export function RaeteV0() {
 
     {state !== 'initial' && <section className="rv-results">
       <div className="rv-results-heading">
-        <div><span className="rv-kicker">YOUR SEARCH</span><h2>{query || 'black mini skirt'}</h2></div>
-        <span className="rv-result-count">8 products</span>
+        <div><span className="rv-kicker" aria-hidden="true">&nbsp;</span><h2>{query || 'black mini skirt'}</h2></div>
       </div>
 
-      <section className="rv-preferences" aria-label="Preset priorities and ranking preferences">
+      <section className="rv-preferences" aria-label="Priority controls and presets">
         <div className="rv-preferences-top">
-          <div><span className="rv-kicker">MAKE THE ORDER YOURS</span><h3>What matters most?</h3></div>
-          <div className="rv-state-note"><SlidersHorizontal size={14} />{state === 'ranked' ? 'Personalized for you' : 'Results are not ranked yet'}</div>
+          <div><span className="rv-kicker" aria-hidden="true">&nbsp;</span><h3>What matters for this choice?</h3></div>
+          <div className="rv-state-note" aria-hidden="true"><SlidersHorizontal size={14} /></div>
         </div>
         <div className="rv-presets">
           <span className="rv-preset-label">Preset priorities</span>
@@ -215,14 +214,14 @@ export function RaeteV0() {
             </select>
           </label>)}
         </div>
-        <p className="rv-priority-foot">Choose all four priorities or a preset to personalize the order. Higher importance carries more weight.</p>
+        <p className="rv-priority-foot">Set all four, or start from a preset.</p>
       </section>
 
-      {state === 'ranked' ? <section className="rv-ranked" aria-label="Personalized results">
+      {state === 'ranked' ? <section className="rv-ranked" aria-label="Ranked products">
         {closeCall ? <div className="rv-close-call">
-          <span className="rv-kicker">A CLOSE CALL</span><h3>No clear winner for your priorities</h3>
+          <span className="rv-kicker" aria-hidden="true">&nbsp;</span><h3>No clear winner for your priorities</h3>
           <p>{ranked[0].product.title} and {ranked[1].product.title} are nearly even. {closeTradeoff}</p>
-        </div> : <div className="rv-ranked-label"><span className="rv-kicker">YOUR PERSONALIZED ORDER</span><span>Made from your priorities</span></div>}
+        </div> : <div className="rv-ranked-label"><span className="rv-kicker rv-ranked-copy">Ranked by your priorities</span></div>}
         {closeCall ? <div className="rv-close-pair">
           {ranked.slice(0, 2).map((item, index) => <article className="rv-close-item" key={item.product.id}>
             <ProductImage product={item.product} /><div className="rv-rank-label">#{index + 1} for your priorities</div><Details product={item.product} />
@@ -251,7 +250,7 @@ export function RaeteV0() {
               </div>
             </article>)}
           </div>
-          {!showAll && <button className="rv-show-more" type="button" onClick={() => setShowAll(true)}>Show more <ChevronDown size={15} /><span>4 more pieces</span></button>}
+          {!showAll && <button className="rv-show-more" type="button" onClick={() => setShowAll(true)}>Show more <ChevronDown size={15} /><span>4 more products</span></button>}
         </>}
         {closeCall && <>
           <div className="rv-alternatives">
@@ -263,10 +262,10 @@ export function RaeteV0() {
               </div>
             </article>)}
           </div>
-          {!showAll && <button className="rv-show-more" type="button" onClick={() => setShowAll(true)}>Show more <ChevronDown size={15} /><span>4 more pieces</span></button>}
+          {!showAll && <button className="rv-show-more" type="button" onClick={() => setShowAll(true)}>Show more <ChevronDown size={15} /><span>4 more products</span></button>}
         </>}
-      </section> : <section className="rv-unranked" aria-label="Unranked product results">
-        <div className="rv-unranked-heading"><span>PRODUCTS FOUND</span><p>These results are not ranked yet.</p></div>
+      </section> : <section className="rv-unranked" aria-label="Unranked products">
+        <div className="rv-unranked-heading"><p>8 products from Channel3 · not ranked yet</p></div>
         <div className="rv-product-grid">
           {products.map((product) => <article className="rv-product-card" key={product.id}><ProductImage product={product} /><Details product={product} /></article>)}
         </div>
@@ -286,6 +285,6 @@ function Breakdown({ item, preferences }: { item: Scored; preferences: Preferenc
       <span>{label}{key !== 'price' && <small>Prototype</small>}</span>
       <span>{preferences[key]} priority · {key === 'price' ? 'Channel3 offer price' : (item.parts[key] ?? 0) >= 67 ? 'Stronger demo signal' : (item.parts[key] ?? 0) >= 34 ? 'Mid-range demo signal' : 'Lighter demo signal'}</span>
     </div>)}
-    <p>Materials, Quality, and Longevity are deterministic prototype signals based on product IDs. Price uses same-currency Channel3 offer prices normalized across these results; a lower price helps in proportion to its importance.</p>
+    <p>Materials, Quality, and Longevity are deterministic prototype signals based on product IDs. Price uses same-currency Channel3 offer prices normalized across these products; a lower price helps in proportion to its importance.</p>
   </div>;
 }
