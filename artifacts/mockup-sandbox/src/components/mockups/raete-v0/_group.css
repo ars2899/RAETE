@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --background: 39 38% 95%;
+  --foreground: 204 23% 16%;
+  --border: 36 20% 84%;
+  --card: 40 35% 98%;
+  --card-foreground: 204 23% 16%;
+  --primary: 164 29% 31%;
+  --primary-foreground: 40 35% 98%;
+  --secondary: 37 24% 90%;
+  --secondary-foreground: 204 23% 16%;
+  --muted: 38 25% 91%;
+  --muted-foreground: 204 10% 45%;
+  --accent: 16 47% 57%;
+  --accent-foreground: 40 35% 98%;
+  --input: 36 20% 84%;
+  --ring: 164 29% 31%;
+  --app-font-sans: 'Manrope', sans-serif;
+  --app-font-serif: 'Manrope', sans-serif;
+  --app-font-mono: 'DM Mono', monospace;
+}
+
+.dark {
+  --background: 204 23% 12%;
+  --foreground: 40 30% 92%;
+  --border: 204 13% 27%;
+  --card: 204 20% 15%;
+  --card-foreground: 40 30% 92%;
+  --primary: 157 35% 58%;
+  --primary-foreground: 204 23% 12%;
+  --secondary: 204 14% 22%;
+  --secondary-foreground: 40 30% 92%;
+  --muted: 204 14% 22%;
+  --muted-foreground: 40 12% 65%;
+  --accent: 16 47% 57%;
+  --accent-foreground: 204 23% 12%;
+  --input: 204 13% 27%;
+  --ring: 157 35% 58%;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
+body { font-family: var(--app-font-sans); }
+
+.current-page {
+  --ink: hsl(204 23% 16%);
+  --muted-ink: hsl(204 10% 45%);
+  --paper: hsl(39 38% 95%);
+  --line: hsl(36 20% 84%);
+  --green: hsl(164 29% 31%);
+  min-height: 100dvh;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 clamp(22px, 7vw, 112px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 78% 20%, hsl(37 37% 91% / .62), transparent 35%),
+    var(--paper);
+}
+.current-topbar, .current-intro, .current-idle, .current-footer { position: relative; z-index: 1; }
+.current-topbar {
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+.current-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -.09em;
+  text-decoration: none;
+}
+.current-symbol {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--green);
+  border-radius: 50% 50% 50% 8px;
+  transform: rotate(-45deg);
+}
+.current-symbol span { width: 5px; height: 5px; background: hsl(16 47% 57%); border-radius: 50%; }
+.current-note, .current-eyebrow, .current-foot, .current-index, .current-caption, .current-footer {
+  font-family: var(--app-font-mono);
+  font-size: 9px;
+  letter-spacing: .11em;
+}
+.current-note { display: flex; align-items: center; gap: 9px; color: var(--muted-ink); }
+.current-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px hsl(164 29% 31% / .11); }
+.current-divider, .current-eyebrow span { color: hsl(16 47% 57%); }
+.current-intro {
+  width: min(100%, 920px);
+  margin: clamp(68px, 11vh, 130px) auto 0;
+  animation: current-enter .65s both cubic-bezier(.2,.8,.2,1);
+}
+.current-eyebrow { display: flex; align-items: center; gap: 12px; color: var(--muted-ink); }
+.current-intro h1 {
+  margin: 23px 0 12px -5px;
+  font-size: clamp(68px, 10.2vw, 126px);
+  line-height: .86;
+  letter-spacing: -.095em;
+  font-weight: 600;
+}
+.current-intro h1 em { color: var(--green); font-weight: 500; letter-spacing: -.105em; }
+.current-copy { margin: 27px 0 36px; font-size: 14px; line-height: 1.75; color: var(--muted-ink); }
+.current-form {
+  height: 66px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid hsl(204 23% 16%);
+}
+.current-form input {
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 500 clamp(16px, 2vw, 20px)/1 var(--app-font-sans);
+  letter-spacing: -.035em;
+}
+.current-form input::placeholder { color: hsl(204 10% 58%); opacity: 1; }
+.current-form:focus-within { border-color: var(--green); box-shadow: 0 1px var(--green); }
+.current-form button {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  height: 42px;
+  padding: 0 17px;
+  border: 0;
+  background: var(--green);
+  color: hsl(40 35% 98%);
+  font: 600 11px var(--app-font-sans);
+  cursor: pointer;
+}
+.current-foot { display: flex; justify-content: space-between; margin-top: 12px; color: hsl(204 10% 57%); font-size: 8px; }
+.current-idle {
+  position: relative;
+  width: min(100%, 920px);
+  min-height: 180px;
+  margin: 54px auto 40px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  animation: current-enter .7s .1s both cubic-bezier(.2,.8,.2,1);
+}
+.current-index { color: var(--muted-ink); }
+.current-content { display: flex; align-items: flex-start; gap: 19px; margin-top: 28px; }
+.current-rule { width: 24px; height: 1px; margin-top: 13px; background: hsl(16 47% 57%); }
+.current-content p { margin: 0; color: hsl(204 15% 39%); font-size: 17px; font-weight: 500; letter-spacing: -.04em; line-height: 1.5; }
+.current-caption { position: absolute; right: 0; bottom: 0; color: hsl(204 10% 57%); font-size: 8px; }
+.current-footer {
+  min-height: 58px;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid var(--line);
+  color: hsl(204 10% 53%);
+  font-size: 8px;
+}
+.current-slash { padding: 0 5px; color: hsl(16 47% 57%); }
+@keyframes current-enter { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (min-width: 1200px) { .current-intro { margin-top: clamp(84px, 12vh, 142px); } }
+@media (max-width: 640px) {
+  .current-page { padding: 0 22px; }
+  .current-topbar { height: 70px; }
+  .current-note { font-size: 8px; letter-spacing: .07em; }
+  .current-intro { margin-top: 74px; }
+  .current-intro h1 { margin-top: 20px; font-size: clamp(68px, 19vw, 100px); }
+  .current-copy { margin: 24px 0 28px; font-size: 13px; }
+  .current-form { height: 60px; gap: 11px; }
+  .current-form button { gap: 9px; padding: 0 12px; }
+  .current-idle { margin-top: 43px; min-height: 165px; }
+  .current-caption { font-size: 7px; }
+  .current-footer { align-items: flex-start; justify-content: center; flex-direction: column; gap: 6px; padding: 14px 0; font-size: 7px; }
+}
