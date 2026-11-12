@@ -177,8 +177,10 @@ export function RaeteV0() {
 
     <section className={`rv-search-intro${state !== 'initial' ? ' rv-search-compact' : ''}`}>
       <div className="rv-search-copy">
-        <h1>{state === 'initial' ? 'Which one wins for you?' : 'A better way to find your piece.'}</h1>
-        <p>{state === 'initial' ? 'Set what matters. See which one comes out ahead, and why.' : 'Search across retailers, then make the order your own.'}</p>
+        {state === 'initial' && <>
+          <h1>Which one wins for you?</h1>
+          <p>Set what matters. See which one comes out ahead, and why.</p>
+        </>}
       </div>
       <form className="rv-search-form" onSubmit={submitSearch}>
         <Search size={18} strokeWidth={1.8} aria-hidden="true" />
