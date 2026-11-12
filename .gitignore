@@ -53,3 +53,10 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Credentials and private keys
+.env
+.env.*
+!.env.example
+*.pem
+*.key
